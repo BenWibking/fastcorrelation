@@ -4,6 +4,8 @@ int main(int argc, char *argv[])
 {
   /* input: number of points to test, number of cells per axis */
   const long seed = 42;
+  const size_t nbins = 10;
+  const double Lbox = 1.0;
   int input_npoints, input_ngrid;
 
   /* check inputs */
@@ -52,24 +54,60 @@ int main(int argc, char *argv[])
   gsl_rng_free(r);
 
   /* hash into grid cells */
-  GHash *grid = allocate_hash(ngrid, 1.0, npoints);
+  GHash *grid = allocate_hash(ngrid, Lbox, npoints);
   if ((int)grid == 0) {
     printf("allocating grid failed!\n");
     exit(-1);
   }
 
   geometric_hash(grid, x, y, z, npoints);
+
+  //  free(x); free(y); free(z);
   
   /* output array of counts in cells */
   size_t j,k;
   for(i=0;i<ngrid;i++) {
     for(j=0;j<ngrid;j++) {
       for(k=0;k<ngrid;k++) {
-	printf("[%ld][%ld][%ld] = %ld\n",i,j,k,grid->counts[INDEX(i,j,k)]);
+	//	printf("[%ld][%ld][%ld] = %ld\n",i,j,k,grid->counts[INDEX(i,j,k)]);
       }
     }
   }
 
+  /* compute pair counts */
+  double *bin_edges_sq = malloc((nbins+1)*sizeof(double));
+  double *bin_edges = malloc((nbins+1)*sizeof(double));
+  long int *pcounts = malloc(nbins*sizeof(long int));
+  long int *pcounts_naive = malloc(nbins*sizeof(long int));
+  for(i=0;i<nbins;i++) {
+    pcounts[i] = (long int) 0;
+    pcounts_naive[i] = (long int) 0;
+  }
+  double maxr = grid->Lbox/(double)(grid->ngrid);
+  double minr = 0.01;
+  double dlogr = (log10(maxr)-log10(minr))/(double)nbins;
+  for(i=0;i<=nbins;i++) {
+    double bin_edge = pow(10.0, ((double)i)*dlogr + log10(minr));
+    //    printf("bin_edge[%ld] = %lf\n",i,bin_edge);
+    bin_edges[i] = bin_edge;
+    bin_edges_sq[i] = SQ(bin_edge);
+  }
+
+  count_pairs(grid, pcounts, bin_edges_sq, nbins);
+  count_pairs_naive(x,y,z, npoints, pcounts_naive, bin_edges_sq, nbins, Lbox);
+
+  for(i=0;i<nbins;i++) {
+    double ndens = npoints/CUBE(Lbox);
+    double exp_counts = (2./3.)*M_PI*(CUBE(bin_edges[i+1])-CUBE(bin_edges[i]))*ndens*npoints;
+    printf("pair counts between (%lf, %lf] = %ld\n",bin_edges[i],bin_edges[i+1],pcounts[i]);
+    printf("(naive) pair counts between (%lf, %lf] = %ld\n",bin_edges[i],bin_edges[i+1],pcounts_naive[i]);
+    printf("expected pair counts between (%lf, %lf] = %lf\n\n",bin_edges[i],bin_edges[i+1],exp_counts);
+  }
+
+  free(pcounts);
+  free(bin_edges);
+  free(bin_edges_sq);
+  
   free_hash(grid);
   return 0;
 }

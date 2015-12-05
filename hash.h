@@ -8,22 +8,28 @@
 
 #define FLOAT double
 #define INDEX(i,j,k) (k + (j + (i*ngrid))*ngrid)
-#define MAX(x,y) (x>y ? x : y)
+#define MAX(x,y) ((x>y) ? x : y)
+#define SQ(x) (x*x)
+#define CUBE(x) (x*x*x)
+#define PERIODIC(dx) ((dx>0.5*Lbox) ? (dx-Lbox) : dx)
 
 typedef struct {
   double Lbox;
   int ngrid;
-  size_t * restrict counts;
-  size_t * restrict allocated;
-  FLOAT ** restrict x;
-  FLOAT ** restrict y;
-  FLOAT ** restrict z;
+  size_t * counts;
+  size_t * allocated;
+  FLOAT ** x;
+  FLOAT ** y;
+  FLOAT ** z;
 } GHash;
 
 
 GHash* allocate_hash(int ngrid, double Lbox, size_t npoints);
 void free_hash(GHash * g);
 void geometric_hash(GHash * grid, FLOAT *x, FLOAT *y, FLOAT *z, size_t npoints);
+
+void count_pairs(GHash * g, long int * pcounts, double * bin_edges_sq, size_t binmax);
+void count_pairs_naive(double *x, double *y, double *z, size_t npoints, long int * pcounts, double * bin_edges_sq, size_t nbins, double Lbox);
 
 #define __INCLUDE_HASH_H__
 #endif
