@@ -19,7 +19,7 @@ GHash* allocate_hash(int ngrid, double Lbox, size_t npoints)
   size_t part_per_cell = (size_t)MAX(ceil(npoints/(ngrid*ngrid*ngrid)),1);
 
   /* now allocate cells */
-  size_t i,j,k;
+  int i,j,k;
   for(i=0;i<ngrid;i++) {
     for(j=0;j<ngrid;j++) {
       for(k=0;k<ngrid;k++) {
@@ -40,7 +40,7 @@ void free_hash(GHash * g)
 {
   free(g->counts);
   free(g->allocated);
-  size_t i,j,k;
+  int i,j,k;
   int ngrid = g->ngrid;
   for(i=0;i<ngrid;i++) {
     for(j=0;j<ngrid;j++) {

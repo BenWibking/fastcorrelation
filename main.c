@@ -4,7 +4,7 @@ int main(int argc, char *argv[])
 {
   /* input: number of points to test, number of cells per axis */
   const long seed = 42;
-  const size_t nbins = 10;
+  const int nbins = 10;
   const double Lbox = 1.0;
   int input_npoints, input_ngrid;
 
@@ -26,9 +26,10 @@ int main(int argc, char *argv[])
     exit(-1);
   }
 
-  size_t npoints, ngrid;
+  size_t npoints;
+  int ngrid;
   npoints = (size_t)input_npoints;
-  ngrid = (size_t)input_ngrid;
+  ngrid = (int)input_ngrid;
 
   /* generate random points (x,y,z) in unit cube */
   // separate arrays (or Fortran-style arrays) are necessary both for SIMD and cache efficiency
@@ -43,12 +44,12 @@ int main(int argc, char *argv[])
   r = gsl_rng_alloc(T);
   gsl_rng_set(r, seed); /* Seeding random distribution */
   
-  size_t i;
-  for(i=0;i<npoints;i++)
+  size_t n;
+  for(n=0;n<npoints;n++)
     {
-      x[i] = gsl_rng_uniform(r); 
-      y[i] = gsl_rng_uniform(r); 
-      z[i] = gsl_rng_uniform(r); 
+      x[n] = gsl_rng_uniform(r); 
+      y[n] = gsl_rng_uniform(r); 
+      z[n] = gsl_rng_uniform(r); 
     }
 
   gsl_rng_free(r);
@@ -65,7 +66,7 @@ int main(int argc, char *argv[])
   //  free(x); free(y); free(z);
   
   /* output array of counts in cells */
-  size_t j,k;
+  int i,j,k;
   for(i=0;i<ngrid;i++) {
     for(j=0;j<ngrid;j++) {
       for(k=0;k<ngrid;k++) {
@@ -94,13 +95,15 @@ int main(int argc, char *argv[])
   }
 
   count_pairs(grid, pcounts, bin_edges_sq, nbins);
-  count_pairs_naive(x,y,z, npoints, pcounts_naive, bin_edges_sq, nbins, Lbox);
+  if(testing)
+    count_pairs_naive(x,y,z, npoints, pcounts_naive, bin_edges_sq, nbins, Lbox);
 
   for(i=0;i<nbins;i++) {
     double ndens = npoints/CUBE(Lbox);
     double exp_counts = (2./3.)*M_PI*(CUBE(bin_edges[i+1])-CUBE(bin_edges[i]))*ndens*npoints;
     printf("pair counts between (%lf, %lf] = %ld\n",bin_edges[i],bin_edges[i+1],pcounts[i]);
-    printf("(naive) pair counts between (%lf, %lf] = %ld\n",bin_edges[i],bin_edges[i+1],pcounts_naive[i]);
+    if(testing)
+      printf("(naive) pair counts between (%lf, %lf] = %ld\n",bin_edges[i],bin_edges[i+1],pcounts_naive[i]);
     printf("expected pair counts between (%lf, %lf] = %lf\n\n",bin_edges[i],bin_edges[i+1],exp_counts);
   }
 

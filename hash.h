@@ -4,6 +4,8 @@
 #include <math.h>
 #include <gsl/gsl_rng.h>
 
+#define testing 0
+
 #define REALLOC_FAC 1.1
 
 #define FLOAT double
@@ -28,8 +30,8 @@ GHash* allocate_hash(int ngrid, double Lbox, size_t npoints);
 void free_hash(GHash * g);
 void geometric_hash(GHash * grid, FLOAT *x, FLOAT *y, FLOAT *z, size_t npoints);
 
-void count_pairs(GHash * g, long int * pcounts, double * bin_edges_sq, size_t binmax);
-void count_pairs_naive(double *x, double *y, double *z, size_t npoints, long int * pcounts, double * bin_edges_sq, size_t nbins, double Lbox);
+void count_pairs_naive(double *x, double *y, double *z, size_t npoints, long int * pcounts, double * bin_edges_sq, int nbins, double Lbox);
+void count_pairs(GHash * g, long int * pcounts, double * bin_edges_sq, int nbins);
 
 #define __INCLUDE_HASH_H__
 #endif

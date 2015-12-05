@@ -1,8 +1,9 @@
 #include "hash.h"
 
-void count_pairs_naive(double *x, double *y, double *z, size_t npoints, long int * pcounts, double * bin_edges_sq, size_t nbins, double Lbox)
+void count_pairs_naive(double *x, double *y, double *z, size_t npoints, long int * pcounts, double * bin_edges_sq, int nbins, double Lbox)
 {
   size_t i,j;
+#pragma omp simd collapse(2)
   for(i=0;i<npoints;i++)
     {
       for(j=0;j<npoints;j++)
@@ -11,7 +12,7 @@ void count_pairs_naive(double *x, double *y, double *z, size_t npoints, long int
 	    continue;
 
 	  double dist_sq = SQ(PERIODIC(x[i]-x[j])) + SQ(PERIODIC(y[i]-y[j])) + SQ(PERIODIC(z[i]-z[j]));
-	  size_t n;
+	  int n;
 	  if(!(dist_sq > bin_edges_sq[nbins])) {
 	    for(n=nbins-1; n>=0; n--) {
 	      if((dist_sq > bin_edges_sq[n]) && (dist_sq < bin_edges_sq[n+1])) {
@@ -28,11 +29,11 @@ void count_pairs_naive(double *x, double *y, double *z, size_t npoints, long int
   }  
 }
 
-void count_pairs(GHash * g, long int * pcounts, double * bin_edges_sq, size_t nbins)
+void count_pairs(GHash * g, long int * pcounts, double * bin_edges_sq, int nbins)
 {
   int ngrid = g->ngrid;
   double Lbox = g->Lbox;
-  size_t ix,iy,iz;
+  int ix,iy,iz;
   for(ix=0;ix<ngrid;ix++) {
     for(iy=0;iy<ngrid;iy++) {
       for(iz=0;iz<ngrid;iz++) {
@@ -45,7 +46,6 @@ void count_pairs(GHash * g, long int * pcounts, double * bin_edges_sq, size_t nb
 	FLOAT * y = g->y[INDEX(ix,iy,iz)];
 	FLOAT * z = g->z[INDEX(ix,iy,iz)];
 	size_t i,j;
-
 #pragma omp simd collapse(2)
 	for(i=0;i<count;i++)
 	  {
@@ -55,7 +55,7 @@ void count_pairs(GHash * g, long int * pcounts, double * bin_edges_sq, size_t nb
 		  continue;
 
 		double dist_sq = SQ(PERIODIC(x[i]-x[j])) + SQ(PERIODIC(y[i]-y[j])) + SQ(PERIODIC(z[i]-z[j]));
-		size_t n;
+		int n;
 		if(!(dist_sq > bin_edges_sq[nbins])) {
 		  for(n=nbins-1; n>=0; n--) {
 		    if((dist_sq > bin_edges_sq[n]) && (dist_sq < bin_edges_sq[n+1])) {
@@ -74,11 +74,12 @@ void count_pairs(GHash * g, long int * pcounts, double * bin_edges_sq, size_t nb
 	      if(iix==0 && iiy==0 && iiz==0)
 		continue;
 
-	      int aix = (ix+iix) % ngrid;
-	      int aiy = (iy+iiy) % ngrid;
-	      int aiz = (iz+iiz) % ngrid;
+	      int aix = (ix+iix+ngrid) % ngrid; // careful to ensure this is nonnegative!
+	      int aiy = (iy+iiy+ngrid) % ngrid;
+	      int aiz = (iz+iiz+ngrid) % ngrid;
 
 	      //	      printf("aix = %d; aiy = %d; aiz = %d\n",aix,aiy,aiz);
+	      //	      printf("aix = %d; aiy = %d; aiz = %d\n",iix,iiy,iiz);
 	      
 	      /* now count pairs with adjacent cells */
 	      size_t adj_count = g->counts[INDEX(aix,aiy,aiz)];
@@ -86,11 +87,12 @@ void count_pairs(GHash * g, long int * pcounts, double * bin_edges_sq, size_t nb
 	      FLOAT * adj_y = g->y[INDEX(aix,aiy,aiz)];
 	      FLOAT * adj_z = g->z[INDEX(aix,aiy,aiz)];
 
+	      size_t i,j;
 #pragma omp simd collapse(2)
 	      for(i=0;i<count;i++) {
 		for(j=0;j<adj_count;j++) {
 		  double dist_sq = SQ(PERIODIC(x[i]-adj_x[j])) + SQ(PERIODIC(y[i]-adj_y[j])) + SQ(PERIODIC(z[i]-adj_z[j]));
-		  size_t n;
+		  int n;
 		  if(!(dist_sq > bin_edges_sq[nbins])) {
 		    for(n=nbins-1; n>=0; n--) {
 		      if((dist_sq > bin_edges_sq[n]) && (dist_sq < bin_edges_sq[n+1])) {

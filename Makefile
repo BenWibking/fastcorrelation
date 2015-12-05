@@ -1,8 +1,9 @@
-CC=gcc -m64
-#CFLAGS=-O3 -Wall -std=c99 -march=native
-CFLAGS=-O0 -g -Wall -std=c99
-INCLUDE=-I /usr/local/include
-LIB=-L /usr/local/lib -lgsl -lgslcblas -lm
+#CC=gcc -m64
+CC=icc
+CFLAGS=-O3 -Wall -march=native -vec-report=3#-std=c99 
+#CFLAGS=-O0 -g -Wall
+INCLUDE=-I $(HOME)/include
+LIB=-L $(HOME)/lib -lgsl -lgslcblas
 #CC=icc
 
 OBJS=hash.o pair_counts.o main.o
@@ -11,13 +12,13 @@ EXEC = hash_test
 default: hash
 
 main.o: main.c
-	$(CC) $(CFLAGS) -c $< -o $@
+	$(CC) $(CFLAGS) $(INCLUDE) -c $< -o $@
 
 pair_counts.o: pair_counts.c
-	$(CC) $(CFLAGS) -c $< -o $@
+	$(CC) $(CFLAGS) $(INCLUDE) -c $< -o $@
 
 hash.o: hash.c
-	$(CC) $(CFLAGS) -c $< -o $@
+	$(CC) $(CFLAGS) $(INCLUDE) -c $< -o $@
 
 hash: $(OBJS)
 	$(CC) $(CFLAGS) $(LIB) $(OBJS) -o $(EXEC)
