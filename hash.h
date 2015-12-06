@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
+#include <string.h>
 #include <gsl/gsl_rng.h>
 
 #define M_PI 3.14159265358979323846
@@ -27,6 +28,10 @@ typedef struct {
   FLOAT ** z;
 } GHash;
 
+
+void my_free(void* block);
+void* my_malloc(size_t size);
+void* my_realloc(void* old_block, size_t new_size, size_t old_size);
 
 GHash* allocate_hash(int ngrid, double Lbox, size_t npoints);
 void free_hash(GHash * g);

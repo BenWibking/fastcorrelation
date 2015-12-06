@@ -105,6 +105,9 @@ void count_pairs(GHash * restrict g, long int * restrict pcounts, double * restr
 	      {
 		double dist_sq[SIMD_WIDTH];
 		size_t k;
+		__assume_aligned(x, 64);
+		__assume_aligned(y, 64);
+		__assume_aligned(z, 64);
 #pragma simd
 		for(k=0;k<SIMD_WIDTH;k++)
 		  {
@@ -189,6 +192,9 @@ void count_pairs(GHash * restrict g, long int * restrict pcounts, double * restr
 		    {
 		      double dist_sq[SIMD_WIDTH];
 		      size_t k;
+		      __assume_aligned(adj_x, 64);
+		      __assume_aligned(adj_y, 64);
+		      __assume_aligned(adj_z, 64);
 #pragma simd
 		      for(k=0;k<SIMD_WIDTH;k++)
 			{
