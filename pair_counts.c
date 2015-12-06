@@ -8,30 +8,24 @@ void count_pairs_naive(FLOAT * x, FLOAT * y, FLOAT * z, size_t npoints, long int
   for(i=0;i<npoints;i++)
     {
       const size_t simd_size = npoints/SIMD_WIDTH;
-      //      printf("simd_size: %ld\n",simd_size);
-      //      printf("npoints: %ld\n",npoints);
-      //      printf("simd_size*SIMD_WIDTH: %ld\n",simd_size*SIMD_WIDTH);
       size_t jj;
       for(jj=0;jj<simd_size;jj++)
 	{
           double dist_sq[SIMD_WIDTH];
 	  size_t k;
+#pragma simd
 	  for(k=0;k<SIMD_WIDTH;k++)
 	    {
 	      size_t kk = k+jj*SIMD_WIDTH;
-	      //	      printf("%ld\t",kk);
-	      //	      printf("%lf\t",x[kk]);
-	      //	      printf("%lf\t",y[kk]);
-	      //	      printf("%lf\t\n",z[kk]);
-	      dist_sq[kk] = SQ(PERIODIC(x[i]-x[kk])) + SQ(PERIODIC(y[i]-y[kk])) + SQ(PERIODIC(z[i]-z[kk]));
+	      dist_sq[k] = SQ(PERIODIC(x[i]-x[kk])) + SQ(PERIODIC(y[i]-y[kk])) + SQ(PERIODIC(z[i]-z[kk]));
 	    }
 
 	  for(k=0;k<SIMD_WIDTH;k++) {
 	    size_t kk = k+jj*SIMD_WIDTH;
-	    if(!(dist_sq[kk] > bin_edges_sq[nbins])) {
+	    if(!(dist_sq[k] > bin_edges_sq[nbins])) {
 	      int n;
 	      for(n=nbins-1; n>=0; n--) {
-		if(dist_sq[kk] > bin_edges_sq[n]) {
+		if(dist_sq[k] > bin_edges_sq[n]) {
 		  pcounts[n]++;
 		  break;
 		}
@@ -43,10 +37,6 @@ void count_pairs_naive(FLOAT * x, FLOAT * y, FLOAT * z, size_t npoints, long int
       size_t k;
       for(k=((simd_size)*SIMD_WIDTH);k<npoints;k++)
 	{
-	  	  printf("[remainder loop] %ld\t",k);
-	  	  printf("%lf\t",x[k]);	      
-	  	  printf("%lf\t",y[k]);	      
-	  	  printf("%lf\t\n",z[k]);	      
 	  double dist_sq = SQ(PERIODIC(x[i]-x[k])) + SQ(PERIODIC(y[i]-y[k])) + SQ(PERIODIC(z[i]-z[k]));
 	  if(!(dist_sq > bin_edges_sq[nbins])) {
 	    int n;
