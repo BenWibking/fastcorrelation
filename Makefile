@@ -1,9 +1,9 @@
 #CC=gcc -m64
 CC=icc
-CFLAGS=-O3 -Wall -march=native -vec-report=3#-std=c99 
-#CFLAGS=-O0 -g -Wall
+#CFLAGS=-O3 -Wall -march=native -vec-report=3 -std=c99
+CFLAGS=-g -Wall -std=c99
 INCLUDE=-I $(HOME)/include
-LIB=-L $(HOME)/lib -lgsl -lgslcblas
+LIB=-L $(HOME)/lib -lgsl -lgslcblas -lm
 #CC=icc
 
 OBJS=hash.o pair_counts.o main.o

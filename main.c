@@ -89,7 +89,6 @@ int main(int argc, char *argv[])
   double dlogr = (log10(maxr)-log10(minr))/(double)nbins;
   for(i=0;i<=nbins;i++) {
     double bin_edge = pow(10.0, ((double)i)*dlogr + log10(minr));
-    //    printf("bin_edge[%ld] = %lf\n",i,bin_edge);
     bin_edges[i] = bin_edge;
     bin_edges_sq[i] = SQ(bin_edge);
   }
