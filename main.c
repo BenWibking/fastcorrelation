@@ -38,7 +38,7 @@ int main(int argc, char *argv[])
   ngrid = (int)input_ngrid;
   Lbox = (double)input_boxsize;
 
-  printf("computing with %ld random points...\n",npoints);
+  printf("computing with %ld random points in a (%lf)^3 periodic box...\n",npoints,Lbox);
 
   /* generate random points (x,y,z) in unit cube */
   // separate arrays (or Fortran-style arrays) are necessary both for SIMD and cache efficiency
