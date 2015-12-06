@@ -74,8 +74,8 @@ void count_pairs(GHash * restrict g, long int * restrict pcounts, double * restr
 	FLOAT * restrict x = g->x[INDEX(ix,iy,iz)];
 	FLOAT * restrict y = g->y[INDEX(ix,iy,iz)];
 	FLOAT * restrict z = g->z[INDEX(ix,iy,iz)];
+	/* // scalar version
 	size_t i,j;
-#pragma omp simd collapse(2)
 	for(i=0;i<count;i++)
 	  {
 	    for(j=0;j<count;j++)
@@ -86,6 +86,52 @@ void count_pairs(GHash * restrict g, long int * restrict pcounts, double * restr
 		double dist_sq = SQ(PERIODIC(x[i]-x[j])) + SQ(PERIODIC(y[i]-y[j])) + SQ(PERIODIC(z[i]-z[j]));
 		int n;
 		if(!(dist_sq > bin_edges_sq[nbins])) {
+		  for(n=nbins-1; n>=0; n--) {
+		    if(dist_sq > bin_edges_sq[n]) {
+		      pcounts[n]++;
+		      break;
+		    }
+		  }
+		}
+	      }
+	      } */
+
+	size_t i;
+	for(i=0;i<count;i++)
+	  {
+	    const size_t simd_size = count/SIMD_WIDTH;
+	    size_t jj;
+	    for(jj=0;jj<simd_size;jj++)
+	      {
+		double dist_sq[SIMD_WIDTH];
+		size_t k;
+#pragma simd
+		for(k=0;k<SIMD_WIDTH;k++)
+		  {
+		    const size_t kk = k+jj*SIMD_WIDTH;
+		    dist_sq[k] = SQ(PERIODIC(x[i]-x[kk])) + SQ(PERIODIC(y[i]-y[kk])) + SQ(PERIODIC(z[i]-z[kk]));
+		  }
+		
+		for(k=0;k<SIMD_WIDTH;k++) {
+		  size_t kk = k+jj*SIMD_WIDTH;
+		  if(!(dist_sq[k] > bin_edges_sq[nbins])) {
+		    int n;
+		    for(n=nbins-1; n>=0; n--) {
+		      if(dist_sq[k] > bin_edges_sq[n]) {
+			pcounts[n]++;
+			break;
+		      }
+		    }
+		  }
+		}
+	      }
+	    
+	    size_t k;
+	    for(k=((simd_size)*SIMD_WIDTH);k<count;k++)
+	      {
+		double dist_sq = SQ(PERIODIC(x[i]-x[k])) + SQ(PERIODIC(y[i]-y[k])) + SQ(PERIODIC(z[i]-z[k]));
+		if(!(dist_sq > bin_edges_sq[nbins])) {
+		  int n;
 		  for(n=nbins-1; n>=0; n--) {
 		    if(dist_sq > bin_edges_sq[n]) {
 		      pcounts[n]++;
@@ -116,8 +162,8 @@ void count_pairs(GHash * restrict g, long int * restrict pcounts, double * restr
 	      FLOAT * restrict adj_y = g->y[INDEX(aix,aiy,aiz)];
 	      FLOAT * restrict adj_z = g->z[INDEX(aix,aiy,aiz)];
 
+	      /* // scalar version
 	      size_t i,j;
-#pragma omp simd collapse(2)
 	      for(i=0;i<count;i++) {
 		for(j=0;j<adj_count;j++) {
 		  double dist_sq = SQ(PERIODIC(x[i]-adj_x[j])) + SQ(PERIODIC(y[i]-adj_y[j])) + SQ(PERIODIC(z[i]-adj_z[j]));
@@ -131,7 +177,55 @@ void count_pairs(GHash * restrict g, long int * restrict pcounts, double * restr
 		    }
 		  }
 		}
-	      }
+		} */
+	      
+	      /* SIMD version */
+	      size_t i;
+	      for(i=0;i<count;i++)
+		{
+		  const size_t simd_size = adj_count/SIMD_WIDTH;
+		  size_t jj;
+		  for(jj=0;jj<simd_size;jj++)
+		    {
+		      double dist_sq[SIMD_WIDTH];
+		      size_t k;
+#pragma simd
+		      for(k=0;k<SIMD_WIDTH;k++)
+			{
+			  const size_t kk = k+jj*SIMD_WIDTH;
+			  dist_sq[k] = SQ(PERIODIC(x[i]-adj_x[kk])) + SQ(PERIODIC(y[i]-adj_y[kk])) + SQ(PERIODIC(z[i]-adj_z[kk]));
+			}
+		      
+		      for(k=0;k<SIMD_WIDTH;k++) {
+			size_t kk = k+jj*SIMD_WIDTH;
+			if(!(dist_sq[k] > bin_edges_sq[nbins])) {
+			  int n;
+			  for(n=nbins-1; n>=0; n--) {
+			    if(dist_sq[k] > bin_edges_sq[n]) {
+			      pcounts[n]++;
+			      break;
+			    }
+			  }
+			}
+		      }
+		    }
+		  
+		  size_t k;
+		  for(k=((simd_size)*SIMD_WIDTH);k<adj_count;k++)
+		    {
+		      double dist_sq = SQ(PERIODIC(x[i]-adj_x[k])) + SQ(PERIODIC(y[i]-adj_y[k])) + SQ(PERIODIC(z[i]-adj_z[k]));
+		      if(!(dist_sq > bin_edges_sq[nbins])) {
+			int n;
+			for(n=nbins-1; n>=0; n--) {
+			  if(dist_sq > bin_edges_sq[n]) {
+			    pcounts[n]++;
+			    break;
+			  }
+			}
+		      }
+		    }
+		}
+
 	    }
 	  }
 	}

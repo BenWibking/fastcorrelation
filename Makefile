@@ -5,7 +5,7 @@ CFLAGS=-O3 -Wall -march=native -vec-report=3 -std=c99
 INCLUDE=-I $(HOME)/include
 LIB=-L $(HOME)/lib -lgsl -lgslcblas
 
-OBJS=hash.o pair_counts.o main.o
+OBJS=hash.o auto_counts.o main.o
 EXEC = hash_test
 
 default: hash
@@ -13,7 +13,7 @@ default: hash
 main.o: main.c
 	$(CC) $(CFLAGS) $(INCLUDE) -c $< -o $@
 
-pair_counts.o: pair_counts.c
+auto_counts.o: auto_counts.c
 	$(CC) $(CFLAGS) $(INCLUDE) -c $< -o $@
 
 hash.o: hash.c
