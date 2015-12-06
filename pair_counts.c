@@ -1,6 +1,6 @@
 #include "hash.h"
 
-#define SIMD_WIDTH 4
+#define SIMD_WIDTH 8
 
 void count_pairs_naive(FLOAT * x, FLOAT * y, FLOAT * z, size_t npoints, long int * pcounts, double *  bin_edges_sq, const int nbins, const double Lbox)
 {
@@ -13,10 +13,13 @@ void count_pairs_naive(FLOAT * x, FLOAT * y, FLOAT * z, size_t npoints, long int
 	{
           double dist_sq[SIMD_WIDTH];
 	  size_t k;
+	  __assume_aligned(x, 64);
+	  __assume_aligned(y, 64);
+	  __assume_aligned(z, 64);
 #pragma simd
 	  for(k=0;k<SIMD_WIDTH;k++)
 	    {
-	      size_t kk = k+jj*SIMD_WIDTH;
+	      const size_t kk = k+jj*SIMD_WIDTH;
 	      dist_sq[k] = SQ(PERIODIC(x[i]-x[kk])) + SQ(PERIODIC(y[i]-y[kk])) + SQ(PERIODIC(z[i]-z[kk]));
 	    }
 

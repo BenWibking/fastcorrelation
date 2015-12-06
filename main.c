@@ -33,9 +33,9 @@ int main(int argc, char *argv[])
 
   /* generate random points (x,y,z) in unit cube */
   // separate arrays (or Fortran-style arrays) are necessary both for SIMD and cache efficiency
-  FLOAT *x = (FLOAT*) malloc(npoints*sizeof(FLOAT));
-  FLOAT *y = (FLOAT*) malloc(npoints*sizeof(FLOAT));
-  FLOAT *z = (FLOAT*) malloc(npoints*sizeof(FLOAT));
+  FLOAT *x = (FLOAT*) _mm_malloc(npoints*sizeof(FLOAT),64);
+  FLOAT *y = (FLOAT*) _mm_malloc(npoints*sizeof(FLOAT),64);
+  FLOAT *z = (FLOAT*) _mm_malloc(npoints*sizeof(FLOAT),64);
   
   const gsl_rng_type * T;
   gsl_rng * r;
@@ -76,10 +76,10 @@ int main(int argc, char *argv[])
   }
 
   /* compute pair counts */
-  double *bin_edges_sq = malloc((nbins+1)*sizeof(double));
-  double *bin_edges = malloc((nbins+1)*sizeof(double));
-  long int *pcounts = malloc(nbins*sizeof(long int));
-  long int *pcounts_naive = malloc(nbins*sizeof(long int));
+  double *bin_edges_sq = _mm_malloc((nbins+1)*sizeof(double),64);
+  double *bin_edges = _mm_malloc((nbins+1)*sizeof(double),64);
+  long int *pcounts = _mm_malloc(nbins*sizeof(long int),64);
+  long int *pcounts_naive = _mm_malloc(nbins*sizeof(long int),64);
   for(i=0;i<nbins;i++) {
     pcounts[i] = (long int) 0;
     pcounts_naive[i] = (long int) 0;
@@ -106,9 +106,9 @@ int main(int argc, char *argv[])
     printf("expected pair counts between (%lf, %lf] = %lf\n\n",bin_edges[i],bin_edges[i+1],exp_counts);
   }
 
-  free(pcounts);
-  free(bin_edges);
-  free(bin_edges_sq);
+  _mm_free(pcounts);
+  _mm_free(bin_edges);
+  _mm_free(bin_edges_sq);
   
   free_hash(grid);
   return 0;

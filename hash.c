@@ -6,15 +6,15 @@ GHash* allocate_hash(int ngrid, double Lbox, size_t npoints)
     return (void*)0;
   }
 
-  GHash * g    = malloc(sizeof(GHash));
+  GHash * g    = _mm_malloc(sizeof(GHash),64);
   g->ngrid = ngrid;
   g->Lbox = Lbox;
 
-  g->counts    = malloc(ngrid*ngrid*ngrid*sizeof(size_t));
-  g->allocated = malloc(ngrid*ngrid*ngrid*sizeof(size_t));
-  g->x         = malloc(ngrid*ngrid*ngrid*sizeof(FLOAT*));
-  g->y         = malloc(ngrid*ngrid*ngrid*sizeof(FLOAT*));
-  g->z         = malloc(ngrid*ngrid*ngrid*sizeof(FLOAT*));
+  g->counts    = _mm_malloc(ngrid*ngrid*ngrid*sizeof(size_t),64);
+  g->allocated = _mm_malloc(ngrid*ngrid*ngrid*sizeof(size_t),64);
+  g->x         = _mm_malloc(ngrid*ngrid*ngrid*sizeof(FLOAT*),64);
+  g->y         = _mm_malloc(ngrid*ngrid*ngrid*sizeof(FLOAT*),64);
+  g->z         = _mm_malloc(ngrid*ngrid*ngrid*sizeof(FLOAT*),64);
 
   size_t part_per_cell = (size_t)MAX(ceil(npoints/(ngrid*ngrid*ngrid)),1);
 
@@ -23,9 +23,9 @@ GHash* allocate_hash(int ngrid, double Lbox, size_t npoints)
   for(i=0;i<ngrid;i++) {
     for(j=0;j<ngrid;j++) {
       for(k=0;k<ngrid;k++) {
-	g->x[INDEX(i,j,k)] = malloc(part_per_cell*sizeof(FLOAT));		
-	g->y[INDEX(i,j,k)] = malloc(part_per_cell*sizeof(FLOAT));		
-	g->z[INDEX(i,j,k)] = malloc(part_per_cell*sizeof(FLOAT));		
+	g->x[INDEX(i,j,k)] = malloc(part_per_cell*sizeof(FLOAT));
+	g->y[INDEX(i,j,k)] = malloc(part_per_cell*sizeof(FLOAT));
+	g->z[INDEX(i,j,k)] = malloc(part_per_cell*sizeof(FLOAT));
 	g->allocated[INDEX(i,j,k)] = part_per_cell;
 	g->counts[INDEX(i,j,k)] = 0;
 	//	printf("allocating [%ld][%ld][%ld] = %ld\n",i,j,k,g->allocated[INDEX(i,j,k)]);
@@ -38,8 +38,8 @@ GHash* allocate_hash(int ngrid, double Lbox, size_t npoints)
 
 void free_hash(GHash * g)
 {
-  free(g->counts);
-  free(g->allocated);
+  _mm_free(g->counts);
+  _mm_free(g->allocated);
   int i,j,k;
   int ngrid = g->ngrid;
   for(i=0;i<ngrid;i++) {
@@ -51,10 +51,10 @@ void free_hash(GHash * g)
       }
     }
   }
-  free(g->x);
-  free(g->y);
-  free(g->z);
-  free(g);
+  _mm_free(g->x);
+  _mm_free(g->y);
+  _mm_free(g->z);
+  _mm_free(g);
 }
 
 void insert_particle(GHash * grid, FLOAT x, FLOAT y, FLOAT z)
