@@ -4,18 +4,20 @@ int main(int argc, char *argv[])
 {
   /* input: number of points to test, number of cells per axis */
   const long seed = 42;
-  const int nbins = 10;
-  const double Lbox = 1.0;
+  const int nbins = 20;
+  double Lbox = 1.0;
   int input_npoints, input_ngrid;
+  float input_boxsize;
 
   /* check inputs */
-  if(argc != 3) {
-    printf("./hash ngrid npoints\n");
+  if(argc != 4) {
+    printf("./hash ngrid npoints_on_side box_size\n");
     exit(-1);
   }
 
   input_ngrid = atoi(argv[1]);
   input_npoints = atoi(argv[2]);
+  input_boxsize = atof(argv[3]);
 
   if(input_ngrid <= 0) {
     printf("ngrid must be positive!\n");
@@ -25,11 +27,18 @@ int main(int argc, char *argv[])
     printf("npoints must be positive\n");
     exit(-1);
   }
+  if(input_boxsize <= 0) {
+    printf("boxsize must be positive!\n");
+    exit(-1);
+  }
 
   size_t npoints;
   int ngrid;
-  npoints = (size_t)input_npoints;
+  npoints = CUBE((size_t)input_npoints);
   ngrid = (int)input_ngrid;
+  Lbox = (double)input_boxsize;
+
+  printf("computing with %ld random points...\n",npoints);
 
   /* generate random points (x,y,z) in unit cube */
   // separate arrays (or Fortran-style arrays) are necessary both for SIMD and cache efficiency
@@ -47,9 +56,9 @@ int main(int argc, char *argv[])
   size_t n;
   for(n=0;n<npoints;n++)
     {
-      x[n] = gsl_rng_uniform(r); 
-      y[n] = gsl_rng_uniform(r); 
-      z[n] = gsl_rng_uniform(r); 
+      x[n] = gsl_rng_uniform(r)*Lbox; 
+      y[n] = gsl_rng_uniform(r)*Lbox; 
+      z[n] = gsl_rng_uniform(r)*Lbox; 
     }
 
   gsl_rng_free(r);
@@ -85,7 +94,7 @@ int main(int argc, char *argv[])
     pcounts_naive[i] = (long int) 0;
   }
   double maxr = grid->Lbox/(double)(grid->ngrid);
-  double minr = 0.01;
+  double minr = 0.1;
   double dlogr = (log10(maxr)-log10(minr))/(double)nbins;
   for(i=0;i<=nbins;i++) {
     double bin_edge = pow(10.0, ((double)i)*dlogr + log10(minr));

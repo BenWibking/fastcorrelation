@@ -1,6 +1,6 @@
 #CC=gcc -m64
 CC=icc
-CFLAGS=-O3 -Wall -march=native -vec-report=3 -std=c99
+CFLAGS=-O3 -Wall -march=native -std=c99
 #CFLAGS=-g -Wall -std=c99 -O0
 INCLUDE=-I $(HOME)/include
 LIB=-L $(HOME)/lib -lgsl -lgslcblas
