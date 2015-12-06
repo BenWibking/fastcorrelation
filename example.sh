@@ -1,3 +1,3 @@
 #!/bin/bash
-time ./hash_test 64 128 2048
+time ./auto 64 128 2048
 
