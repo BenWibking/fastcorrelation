@@ -19,7 +19,7 @@ void cross_count_pairs_naive(FLOAT * x1, FLOAT * y1, FLOAT * z1, size_t npoints1
 	  __assume_aligned(x2, 32);
 	  __assume_aligned(y2, 32);
 	  __assume_aligned(z2, 32);
-#pragma simd
+	  //#pragma simd
 	  for(k=0;k<SIMD_WIDTH;k++)
 	    {
 	      const size_t kk = k+jj*SIMD_WIDTH;
@@ -103,7 +103,7 @@ void cross_count_pairs(GHash * restrict g1, GHash * restrict g2, long int * rest
 		__assume_aligned(x2, 32);
 		__assume_aligned(y2, 32);
 		__assume_aligned(z2, 32);
-#pragma simd
+		//#pragma simd
 		for(k=0;k<SIMD_WIDTH;k++)
 		  {
 		    const size_t kk = k+jj*SIMD_WIDTH;
@@ -170,7 +170,7 @@ void cross_count_pairs(GHash * restrict g1, GHash * restrict g2, long int * rest
 		      __assume_aligned(adj_x, 32);
 		      __assume_aligned(adj_y, 32);
 		      __assume_aligned(adj_z, 32);
-#pragma simd
+		      //#pragma simd
 		      for(k=0;k<SIMD_WIDTH;k++)
 			{
 			  const size_t kk = k+jj*SIMD_WIDTH;

@@ -16,7 +16,7 @@ void count_pairs_naive(FLOAT * x, FLOAT * y, FLOAT * z, size_t npoints, long int
 	  __assume_aligned(x, 32);
 	  __assume_aligned(y, 32);
 	  __assume_aligned(z, 32);
-#pragma simd
+	  //#pragma simd
 	  for(k=0;k<SIMD_WIDTH;k++)
 	    {
 	      const size_t kk = k+jj*SIMD_WIDTH;
@@ -108,7 +108,7 @@ void count_pairs(GHash * restrict g, long int * restrict pcounts, double * restr
 		__assume_aligned(x, 32);
 		__assume_aligned(y, 32);
 		__assume_aligned(z, 32);
-#pragma simd
+		//#pragma simd
 		for(k=0;k<SIMD_WIDTH;k++)
 		  {
 		    const size_t kk = k+jj*SIMD_WIDTH;
@@ -195,7 +195,7 @@ void count_pairs(GHash * restrict g, long int * restrict pcounts, double * restr
 		      __assume_aligned(adj_x, 32);
 		      __assume_aligned(adj_y, 32);
 		      __assume_aligned(adj_z, 32);
-#pragma simd
+		      //#pragma simd
 		      for(k=0;k<SIMD_WIDTH;k++)
 			{
 			  const size_t kk = k+jj*SIMD_WIDTH;
