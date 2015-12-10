@@ -19,7 +19,7 @@ void* my_realloc(void* old_block, size_t new_size, size_t old_size)
   return new_block;
 }
 
-GHash* allocate_hash(int ngrid, double Lbox, size_t npoints)
+GHash* allocate_hash(int ngrid, double Lbox, size_t npoints, FLOAT * x, FLOAT * y, FLOAT * z)
 {
   if((ngrid <= 0) || (npoints <= 0)) {
     return (void*)0;
@@ -35,19 +35,37 @@ GHash* allocate_hash(int ngrid, double Lbox, size_t npoints)
   g->y         = my_malloc(ngrid*ngrid*ngrid*sizeof(FLOAT*));
   g->z         = my_malloc(ngrid*ngrid*ngrid*sizeof(FLOAT*));
 
-  size_t part_per_cell = (size_t)MAX(ceil(npoints/(ngrid*ngrid*ngrid)),1);
-
-  /* now allocate cells */
   int i,j,k;
   for(i=0;i<ngrid;i++) {
     for(j=0;j<ngrid;j++) {
       for(k=0;k<ngrid;k++) {
-	g->x[INDEX(i,j,k)] = my_malloc(part_per_cell*sizeof(FLOAT));
-	g->y[INDEX(i,j,k)] = my_malloc(part_per_cell*sizeof(FLOAT));
-	g->z[INDEX(i,j,k)] = my_malloc(part_per_cell*sizeof(FLOAT));
-	g->allocated[INDEX(i,j,k)] = part_per_cell;
 	g->counts[INDEX(i,j,k)] = 0;
-	//	printf("allocating [%ld][%ld][%ld] = %ld\n",i,j,k,g->allocated[INDEX(i,j,k)]);
+      }
+    }
+  }
+
+  /* loop over particles, determine bin counts */
+  size_t n;
+  for(n=0;n<npoints;n++) {
+    /* determine bin */
+    int ix = floor(x[n]/g->Lbox*((double)g->ngrid));
+    int iy = floor(y[n]/g->Lbox*((double)g->ngrid));
+    int iz = floor(z[n]/g->Lbox*((double)g->ngrid));
+    /* increment bin counter */
+    g->counts[INDEX(ix,iy,iz)]++;
+  }
+
+  /* now allocate cells */
+  for(i=0;i<ngrid;i++) {
+    for(j=0;j<ngrid;j++) {
+      for(k=0;k<ngrid;k++) {
+	size_t bin_count = g->counts[INDEX(i,j,k)];
+	g->x[INDEX(i,j,k)] = my_malloc(bin_count*sizeof(FLOAT));
+	g->y[INDEX(i,j,k)] = my_malloc(bin_count*sizeof(FLOAT));
+	g->z[INDEX(i,j,k)] = my_malloc(bin_count*sizeof(FLOAT));
+	g->allocated[INDEX(i,j,k)] = bin_count;
+	g->counts[INDEX(i,j,k)] = 0;
+	//	printf("allocating [%d][%d][%d] = %ld\n",i,j,k,g->allocated[INDEX(i,j,k)]);
       }
     }
   }
@@ -85,43 +103,11 @@ void insert_particle(GHash * grid, FLOAT x, FLOAT y, FLOAT z)
 
   int ngrid = grid->ngrid;
 
-  /* see if there is space in the cell */
-  if(grid->counts[INDEX(ix,iy,iz)] < grid->allocated[INDEX(ix,iy,iz)])
-    {
-      size_t idx = grid->counts[INDEX(ix,iy,iz)];
-      grid->x[INDEX(ix,iy,iz)][idx] = x;
-      grid->y[INDEX(ix,iy,iz)][idx] = y;
-      grid->z[INDEX(ix,iy,iz)][idx] = z;
-      (grid->counts[INDEX(ix,iy,iz)])++;
-    }
-  else
-    {
-      /* reallocate cell with larger size */
-      size_t old_size = grid->allocated[INDEX(ix,iy,iz)];
-      size_t new_size = MAX(old_size*REALLOC_FAC, old_size+1);
-      //      printf("realloc'ing for [%d][%d][%d]!\n",ix,iy,iz);
-      grid->x[INDEX(ix,iy,iz)] = my_realloc(grid->x[INDEX(ix,iy,iz)], \
-					    new_size*sizeof(FLOAT), old_size*sizeof(FLOAT));
-      grid->y[INDEX(ix,iy,iz)] = my_realloc(grid->y[INDEX(ix,iy,iz)], \
-					    new_size*sizeof(FLOAT), old_size*sizeof(FLOAT));
-      grid->z[INDEX(ix,iy,iz)] = my_realloc(grid->z[INDEX(ix,iy,iz)],	\
-					    new_size*sizeof(FLOAT), old_size*sizeof(FLOAT));
-      grid->allocated[INDEX(ix,iy,iz)] = new_size;
-      
-      size_t idx = grid->counts[INDEX(ix,iy,iz)];
-      if(new_size > idx) {
-	grid->x[INDEX(ix,iy,iz)][idx] = x;
-	grid->y[INDEX(ix,iy,iz)][idx] = y;
-	grid->z[INDEX(ix,iy,iz)][idx] = z;
-	(grid->counts[INDEX(ix,iy,iz)])++;
-      } else {
-	printf("realloc failed for [%d][%d][%d]!\n",ix,iy,iz);
-	printf("old_size = %ld\n",old_size);
-	printf("new_size = %ld\n",new_size);
-	printf("idx = %ld\n",idx);
-	exit(1);
-      }
-    }
+  size_t idx = grid->counts[INDEX(ix,iy,iz)];
+  grid->x[INDEX(ix,iy,iz)][idx] = x;
+  grid->y[INDEX(ix,iy,iz)][idx] = y;
+  grid->z[INDEX(ix,iy,iz)][idx] = z;
+  (grid->counts[INDEX(ix,iy,iz)])++;
 }
 
 void geometric_hash(GHash * grid, FLOAT *x, FLOAT *y, FLOAT *z, size_t npoints)

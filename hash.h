@@ -7,7 +7,7 @@
 
 #define M_PI 3.14159265358979323846
 
-#define testing 1
+#define testing 0
 
 #define REALLOC_FAC 1.1
 
@@ -33,7 +33,7 @@ void my_free(void* block);
 void* my_malloc(size_t size);
 void* my_realloc(void* old_block, size_t new_size, size_t old_size);
 
-GHash* allocate_hash(int ngrid, double Lbox, size_t npoints);
+GHash* allocate_hash(int ngrid, double Lbox, size_t npoints, FLOAT * x, FLOAT * y, FLOAT * z);
 void free_hash(GHash * g);
 void geometric_hash(GHash * grid, FLOAT *x, FLOAT *y, FLOAT *z, size_t npoints);
 
