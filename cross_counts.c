@@ -1,6 +1,6 @@
 #include "hash.h"
 
-#define SIMD_WIDTH 8
+#define SIMD_WIDTH 4
 
 void cross_count_pairs_naive(FLOAT * x1, FLOAT * y1, FLOAT * z1, size_t npoints1, FLOAT * x2, FLOAT * y2, FLOAT * z2, size_t npoints2, long int * pcounts, double *  bin_edges_sq, const int nbins, const double Lbox)
 {
@@ -13,12 +13,12 @@ void cross_count_pairs_naive(FLOAT * x1, FLOAT * y1, FLOAT * z1, size_t npoints1
 	{
           double dist_sq[SIMD_WIDTH];
 	  size_t k;
-	  __assume_aligned(x1, 64);
-	  __assume_aligned(y1, 64);
-	  __assume_aligned(z1, 64);
-	  __assume_aligned(x2, 64);
-	  __assume_aligned(y2, 64);
-	  __assume_aligned(z2, 64);
+	  __assume_aligned(x1, 32);
+	  __assume_aligned(y1, 32);
+	  __assume_aligned(z1, 32);
+	  __assume_aligned(x2, 32);
+	  __assume_aligned(y2, 32);
+	  __assume_aligned(z2, 32);
 #pragma simd
 	  for(k=0;k<SIMD_WIDTH;k++)
 	    {
@@ -97,12 +97,12 @@ void cross_count_pairs(GHash * restrict g1, GHash * restrict g2, long int * rest
 	      {
 		double dist_sq[SIMD_WIDTH];
 		size_t k;
-		__assume_aligned(x1, 64);
-		__assume_aligned(y1, 64);
-		__assume_aligned(z1, 64);
-		__assume_aligned(x2, 64);
-		__assume_aligned(y2, 64);
-		__assume_aligned(z2, 64);
+		__assume_aligned(x1, 32);
+		__assume_aligned(y1, 32);
+		__assume_aligned(z1, 32);
+		__assume_aligned(x2, 32);
+		__assume_aligned(y2, 32);
+		__assume_aligned(z2, 32);
 #pragma simd
 		for(k=0;k<SIMD_WIDTH;k++)
 		  {
@@ -167,9 +167,9 @@ void cross_count_pairs(GHash * restrict g1, GHash * restrict g2, long int * rest
 		    {
 		      double dist_sq[SIMD_WIDTH];
 		      size_t k;
-		      __assume_aligned(adj_x, 64);
-		      __assume_aligned(adj_y, 64);
-		      __assume_aligned(adj_z, 64);
+		      __assume_aligned(adj_x, 32);
+		      __assume_aligned(adj_y, 32);
+		      __assume_aligned(adj_z, 32);
 #pragma simd
 		      for(k=0;k<SIMD_WIDTH;k++)
 			{

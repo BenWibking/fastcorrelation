@@ -2,7 +2,7 @@
 
 void* my_malloc(size_t size)
 {
-  return _mm_malloc(size,64);
+  return _mm_malloc(size,32);
 }
 
 void my_free(void* block)
