@@ -9,8 +9,6 @@
 
 #define testing 0
 
-#define REALLOC_FAC 1.1
-
 #define FLOAT double
 #define INDEX(i,j,k) (k + (j + (i*ngrid))*ngrid)
 #define MAX(x,y) ((x>y) ? x : y)
