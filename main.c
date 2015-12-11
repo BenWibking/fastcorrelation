@@ -61,7 +61,7 @@ int main(int argc, char *argv[])
 
   geometric_hash(grid, x, y, z, npoints);
 
-  /* compute pair counts */
+  /* compute pair counts assuming periodic box */
   double *bin_edges_sq = my_malloc((nbins+1)*sizeof(double));
   double *bin_edges = my_malloc((nbins+1)*sizeof(double));
   long int *pcounts = my_malloc(nbins*sizeof(long int));
@@ -85,16 +85,19 @@ int main(int argc, char *argv[])
   count_pairs_naive(x,y,z, npoints, pcounts_naive, bin_edges_sq, nbins, Lbox);
 #endif
 
+  /* output pair counts */
   for(i=0;i<nbins;i++) {
     double ndens = npoints/CUBE(Lbox);
     double exp_counts = (2./3.)*M_PI*(CUBE(bin_edges[i+1])-CUBE(bin_edges[i]))*ndens*npoints;
     printf("pair counts between (%lf, %lf] = %ld\n",bin_edges[i],bin_edges[i+1],pcounts[i]);
 #ifdef TEST_ALL_PAIRS
-    printf("(naive) pair counts between (%lf, %lf] = %ld\n",bin_edges[i],bin_edges[i+1],pcounts_naive[i]);
+    printf("(naive) pair counts = %ld\n",pcounts_naive[i]);
 #endif
-    printf("expected pair counts between (%lf, %lf] = %lf\n\n",bin_edges[i],bin_edges[i+1],exp_counts);
+    printf("expected pair counts = %lf\n",exp_counts);
+    printf("correlation function = %lf\n\n",(double)pcounts[i]/exp_counts);
   }
 
+  /* free memory */
   my_free(pcounts);
   my_free(bin_edges);
   my_free(bin_edges_sq);
