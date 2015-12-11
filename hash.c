@@ -2,20 +2,32 @@
 
 void* my_malloc(size_t size)
 {
+#ifdef __INTEL_COMPILER
   return _mm_malloc(size,32);
+#elseif
+  return malloc(size);
+#endif
 }
 
 void my_free(void* block)
 {
+#ifdef __INTEL_COMPILER
   _mm_free(block);
+#elseif
+  free(block);
+#endif
 }
 
 void* my_realloc(void* old_block, size_t new_size, size_t old_size)
 {
   /* emulate the behavior of realloc, ensuring alignment (but we always have to do a memcpy) */
+#ifdef __INTEL_COMPILER
   void* new_block = _mm_malloc(new_size,64);
   memcpy(new_block, old_block, old_size);
   _mm_free(old_block);
+#elseif
+  void* new_block = realloc(old_block, new_size);
+#endif
   return new_block;
 }
 

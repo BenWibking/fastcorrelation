@@ -5,6 +5,8 @@
 #include <string.h>
 #include <gsl/gsl_rng.h>
 
+#include "read_hdf5.h"
+
 #define M_PI 3.14159265358979323846
 
 #define testing 0

@@ -1,6 +1,6 @@
 #include "read_hdf5.h"
 
-void* read_halo_hdf5(char filename[], char dataset_name[], size_t *len) {
+void* read_particles_hdf5(char filename[], char dataset_name[], size_t *len) {
   /* open HDF5 file*/
   /* in: filename, dataset_name
      out: len */

@@ -13,12 +13,14 @@ void cross_count_pairs_naive(FLOAT * x1, FLOAT * y1, FLOAT * z1, size_t npoints1
 	{
           double dist_sq[SIMD_WIDTH];
 	  size_t k;
+#ifdef __INTEL_COMPILER
 	  __assume_aligned(x1, 32);
 	  __assume_aligned(y1, 32);
 	  __assume_aligned(z1, 32);
 	  __assume_aligned(x2, 32);
 	  __assume_aligned(y2, 32);
 	  __assume_aligned(z2, 32);
+#endif
 	  //#pragma simd
 	  for(k=0;k<SIMD_WIDTH;k++)
 	    {
@@ -97,12 +99,14 @@ void cross_count_pairs(GHash * restrict g1, GHash * restrict g2, long int * rest
 	      {
 		double dist_sq[SIMD_WIDTH];
 		size_t k;
+#ifdef __INTEL_COMPILER
 		__assume_aligned(x1, 32);
 		__assume_aligned(y1, 32);
 		__assume_aligned(z1, 32);
 		__assume_aligned(x2, 32);
 		__assume_aligned(y2, 32);
 		__assume_aligned(z2, 32);
+#endif
 		//#pragma simd
 		for(k=0;k<SIMD_WIDTH;k++)
 		  {
@@ -167,9 +171,11 @@ void cross_count_pairs(GHash * restrict g1, GHash * restrict g2, long int * rest
 		    {
 		      double dist_sq[SIMD_WIDTH];
 		      size_t k;
+#ifdef __INTEL_COMPILER
 		      __assume_aligned(adj_x, 32);
 		      __assume_aligned(adj_y, 32);
 		      __assume_aligned(adj_z, 32);
+#endif
 		      //#pragma simd
 		      for(k=0;k<SIMD_WIDTH;k++)
 			{
