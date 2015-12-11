@@ -9,7 +9,7 @@
 
 #define M_PI 3.14159265358979323846
 
-#define testing 0
+//#define TEST_ALL_PAIRS 1
 
 #define FLOAT double
 #define INDEX(i,j,k) (k + (j + (i*ngrid))*ngrid)

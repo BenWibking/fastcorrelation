@@ -29,7 +29,6 @@ void cross_count_pairs_naive(FLOAT * x1, FLOAT * y1, FLOAT * z1, size_t npoints1
 	    }
 
 	  for(k=0;k<SIMD_WIDTH;k++) {
-	    size_t kk = k+jj*SIMD_WIDTH;
 	    if(!(dist_sq[k] > bin_edges_sq[nbins])) {
 	      int n;
 	      for(n=nbins-1; n>=0; n--) {
@@ -115,7 +114,6 @@ void cross_count_pairs(GHash * restrict g1, GHash * restrict g2, long int * rest
 		  }
 		
 		for(k=0;k<SIMD_WIDTH;k++) {
-		  size_t kk = k+jj*SIMD_WIDTH;
 		  if(!(dist_sq[k] > bin_edges_sq[nbins])) {
 		    int n;
 		    for(n=nbins-1; n>=0; n--) {
@@ -184,7 +182,6 @@ void cross_count_pairs(GHash * restrict g1, GHash * restrict g2, long int * rest
 			}
 		      
 		      for(k=0;k<SIMD_WIDTH;k++) {
-			size_t kk = k+jj*SIMD_WIDTH;
 			if(!(dist_sq[k] > bin_edges_sq[nbins])) {
 			  int n;
 			  for(n=nbins-1; n>=0; n--) {

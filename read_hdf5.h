@@ -12,5 +12,4 @@ typedef struct
   float z;
 } particle;
 
-void* read_halo_hdf5(char infile[],char dataset_name[],size_t *len);
-
+void* read_particles_hdf5(char filename[], char dataset_name[], size_t *len);

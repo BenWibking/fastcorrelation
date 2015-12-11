@@ -26,7 +26,6 @@ void count_pairs_naive(FLOAT * x, FLOAT * y, FLOAT * z, size_t npoints, long int
 	    }
 
 	  for(k=0;k<SIMD_WIDTH;k++) {
-	    size_t kk = k+jj*SIMD_WIDTH;
 	    if(!(dist_sq[k] > bin_edges_sq[nbins])) {
 	      int n;
 	      for(n=nbins-1; n>=0; n--) {
@@ -120,7 +119,6 @@ void count_pairs(GHash * restrict g, long int * restrict pcounts, double * restr
 		  }
 		
 		for(k=0;k<SIMD_WIDTH;k++) {
-		  size_t kk = k+jj*SIMD_WIDTH;
 		  if(!(dist_sq[k] > bin_edges_sq[nbins])) {
 		    int n;
 		    for(n=nbins-1; n>=0; n--) {
@@ -209,7 +207,6 @@ void count_pairs(GHash * restrict g, long int * restrict pcounts, double * restr
 			}
 		      
 		      for(k=0;k<SIMD_WIDTH;k++) {
-			size_t kk = k+jj*SIMD_WIDTH;
 			if(!(dist_sq[k] > bin_edges_sq[nbins])) {
 			  int n;
 			  for(n=nbins-1; n>=0; n--) {
