@@ -7,9 +7,9 @@ Usage:
 ./cross max_scale box_size filename_of_pointsA filename_of_pointsB
 
 Acknowledgements:
-This code is a descendant of a program originally written by David Weinberg.
-The memory layout optimizations are due to ideas implemented in a separate
-implementation by Manodeep Sinha.
+This code is a intellectual descendant of a program originally written by
+David Weinberg.  The memory layout optimizations are due to ideas implemented
+in a separate implementation by Manodeep Sinha.
 
     Copyright (C) 2015  Benjamin D. Wibking
 
