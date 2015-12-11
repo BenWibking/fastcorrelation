@@ -6,7 +6,7 @@ INCLUDE=-I $(HOME)/include $(HDF5_C_INCLUDE) $(MPI_CFLAGS)
 LIB=-L $(HOME)/lib -lgsl -lgslcblas $(HDF5_C_LIBS)
 
 OBJS_AUTO=hash.o auto_counts.o read_hdf5.o main.o
-OBJS_CROSS=hash.o cross_counts.o main_cross.o
+OBJS_CROSS=hash.o cross_counts.o read_hdf5.o main_cross.o
 EXEC_AUTO = auto
 EXEC_CROSS = cross
 

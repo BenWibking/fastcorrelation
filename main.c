@@ -11,7 +11,7 @@ int main(int argc, char *argv[])
 
   /* check inputs */
   if(argc != 4) {
-    printf("./hash ngrid box_size filename\n");
+    printf("./auto ngrid box_size filename\n");
     exit(-1);
   }
 

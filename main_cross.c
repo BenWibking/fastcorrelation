@@ -3,28 +3,26 @@
 int main(int argc, char *argv[])
 {
   /* input: number of points to test, number of cells per axis */
-  const long seed = 42;
   const int nbins = 20;
-  double Lbox = 1.0;
-  int input_npoints, input_ngrid;
+  double Lbox;
+  int input_ngrid;
   float input_boxsize;
+  char filenameA[1000], filenameB[1000];
 
   /* check inputs */
-  if(argc != 4) {
-    printf("./hash ngrid npoints_on_side box_size\n");
+  if(argc != 5) {
+    printf("./cross ngrid box_size filenameA filenameB\n");
     exit(-1);
   }
 
   input_ngrid = atoi(argv[1]);
-  input_npoints = atoi(argv[2]);
-  input_boxsize = atof(argv[3]);
+  input_boxsize = atof(argv[2]);
+
+  sprintf(filenameA,"%s",argv[3]);
+  sprintf(filenameB,"%s",argv[4]);
 
   if(input_ngrid <= 0) {
     printf("ngrid must be positive!\n");
-    exit(-1);
-  }
-  if(input_npoints <= 0) {
-    printf("npoints must be positive\n");
     exit(-1);
   }
   if(input_boxsize <= 0) {
@@ -32,51 +30,45 @@ int main(int argc, char *argv[])
     exit(-1);
   }
 
-  size_t npoints1, npoints2;
+  size_t npointsA, npointsB;
   int ngrid;
-  npoints1 = CUBE((size_t)input_npoints);
-  npoints2 = CUBE((size_t)input_npoints);
   ngrid = (int)input_ngrid;
   Lbox = (double)input_boxsize;
 
-  printf("computing with %ld random points in a (%lf)^3 periodic box...\n",npoints1,Lbox);
+  /* read from file */
+  particle *pointsA = read_particles_hdf5(filenameA, "particles", &npointsA);
+  particle *pointsB = read_particles_hdf5(filenameB, "particles", &npointsB);
 
   /* generate random points (x,y,z) in unit cube */
   // separate arrays (or Fortran-style arrays) are necessary both for SIMD and cache efficiency
-  FLOAT *x1 = (FLOAT*) my_malloc(npoints1*sizeof(FLOAT));
-  FLOAT *y1 = (FLOAT*) my_malloc(npoints1*sizeof(FLOAT));
-  FLOAT *z1 = (FLOAT*) my_malloc(npoints1*sizeof(FLOAT));
+  FLOAT *x1 = (FLOAT*) my_malloc(npointsA*sizeof(FLOAT));
+  FLOAT *y1 = (FLOAT*) my_malloc(npointsA*sizeof(FLOAT));
+  FLOAT *z1 = (FLOAT*) my_malloc(npointsA*sizeof(FLOAT));
 
-  FLOAT *x2 = (FLOAT*) my_malloc(npoints2*sizeof(FLOAT));
-  FLOAT *y2 = (FLOAT*) my_malloc(npoints2*sizeof(FLOAT));
-  FLOAT *z2 = (FLOAT*) my_malloc(npoints2*sizeof(FLOAT));
-  
-  const gsl_rng_type * T;
-  gsl_rng * r;
-  gsl_rng_env_setup();
-  T = gsl_rng_default;
-  r = gsl_rng_alloc(T);
-  gsl_rng_set(r, seed); /* Seeding random distribution */
+  FLOAT *x2 = (FLOAT*) my_malloc(npointsB*sizeof(FLOAT));
+  FLOAT *y2 = (FLOAT*) my_malloc(npointsB*sizeof(FLOAT));
+  FLOAT *z2 = (FLOAT*) my_malloc(npointsB*sizeof(FLOAT));
   
   size_t n;
-  for(n=0;n<npoints1;n++)
+  for(n=0;n<npointsA;n++)
     {
-      x1[n] = gsl_rng_uniform(r)*Lbox; 
-      y1[n] = gsl_rng_uniform(r)*Lbox; 
-      z1[n] = gsl_rng_uniform(r)*Lbox; 
+      x1[n] = pointsA[n].x;
+      y1[n] = pointsA[n].y;
+      z1[n] = pointsA[n].z;
     }
-  for(n=0;n<npoints2;n++)
+  for(n=0;n<npointsB;n++)
     {
-      x2[n] = gsl_rng_uniform(r)*Lbox; 
-      y2[n] = gsl_rng_uniform(r)*Lbox; 
-      z2[n] = gsl_rng_uniform(r)*Lbox; 
+      x2[n] = pointsB[n].x;
+      y2[n] = pointsB[n].y;
+      z2[n] = pointsB[n].z;
     }
 
-  gsl_rng_free(r);
+  free(pointsA);
+  free(pointsB);
 
   /* hash into grid cells */
-  GHash *grid1 = allocate_hash(ngrid, Lbox, npoints1, x1, y1, z1);
-  GHash *grid2 = allocate_hash(ngrid, Lbox, npoints2, x2, y2, z2);
+  GHash *grid1 = allocate_hash(ngrid, Lbox, npointsA,x1, y1, z1);
+  GHash *grid2 = allocate_hash(ngrid, Lbox, npointsB, x2, y2, z2);
   if ((int)grid1 == 0) {
     printf("allocating grid1 failed!\n");
     exit(-1);
@@ -86,8 +78,8 @@ int main(int argc, char *argv[])
     exit(-1);
   }
 
-  geometric_hash(grid1, x1, y1, z1, npoints1);
-  geometric_hash(grid2, x2, y2, z2, npoints2);
+  geometric_hash(grid1, x1, y1, z1, npointsA);
+  geometric_hash(grid2, x2, y2, z2, npointsB);
   
 
   /* compute pair counts */
@@ -110,15 +102,17 @@ int main(int argc, char *argv[])
   }
 
   cross_count_pairs(grid1, grid2, pcounts, bin_edges_sq, nbins);
-  if(testing)
-    cross_count_pairs_naive(x1,y1,z1,npoints1, x2,y2,z2,npoints2, pcounts_naive, bin_edges_sq, nbins, Lbox);
+#ifdef TEST_ALL_PAIRS
+  cross_count_pairs_naive(x1,y1,z1,npoints1, x2,y2,z2,npoints2, pcounts_naive, bin_edges_sq, nbins, Lbox);
+#endif
 
   for(i=0;i<nbins;i++) {
-    double ndens1 = npoints1/CUBE(Lbox);
-    double exp_counts = (4./3.)*M_PI*(CUBE(bin_edges[i+1])-CUBE(bin_edges[i]))*ndens1*npoints2;
+    double ndensA = npointsA/CUBE(Lbox);
+    double exp_counts = (4./3.)*M_PI*(CUBE(bin_edges[i+1])-CUBE(bin_edges[i]))*ndensA*npointsB;
     printf("pair counts between (%lf, %lf] = %ld\n",bin_edges[i],bin_edges[i+1],pcounts[i]);
-    if(testing)
-      printf("(naive) pair counts between (%lf, %lf] = %ld\n",bin_edges[i],bin_edges[i+1],pcounts_naive[i]);
+#ifdef TEST_ALL_PAIRS
+    printf("(naive) pair counts between (%lf, %lf] = %ld\n",bin_edges[i],bin_edges[i+1],pcounts_naive[i]);
+#endif
     printf("expected pair counts between (%lf, %lf] = %lf\n\n",bin_edges[i],bin_edges[i+1],exp_counts);
   }
 
