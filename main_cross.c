@@ -3,37 +3,53 @@
 int main(int argc, char *argv[])
 {
   /* input: number of points to test, number of cells per axis */
-  const int nbins = 20;
-  double Lbox;
-  int input_ngrid;
-  float input_boxsize;
-  char filenameA[1000], filenameB[1000];
+  int nbins;
+  double Lbox, minr, maxr;
+  int input_nbins;
+  float input_boxsize, input_rmin, input_rmax;
+  char *filenameA, *filenameB;
 
   /* check inputs */
-  if(argc != 5) {
-    printf("./cross ngrid box_size filenameA filenameB\n");
+  if(argc != 7) {
+    printf("./auto nbins rmin rmax box_size filenameA filenameB\n");
     exit(-1);
   }
 
-  input_ngrid = atoi(argv[1]);
-  input_boxsize = atof(argv[2]);
+  input_nbins = atoi(argv[1]);
+  input_rmin = atof(argv[2]);
+  input_rmax = atof(argv[3]);
+  input_boxsize = atof(argv[4]);
 
-  sprintf(filenameA,"%s",argv[3]);
-  sprintf(filenameB,"%s",argv[4]);
+  filenameA = malloc(sizeof(char)*strlen(argv[5]));
+  sprintf(filenameA,"%s",argv[5]);
+  filenameB = malloc(sizeof(char)*strlen(argv[6]));
+  sprintf(filenameB,"%s",argv[6]);
 
-  if(input_ngrid <= 0) {
+  if(input_nbins <= 0) {
     printf("ngrid must be positive!\n");
     exit(-1);
   }
-  if(input_boxsize <= 0) {
+  if(input_rmin <= 0.) {
+    printf("rmin must be positive!\n");
+    exit(-1);
+  }
+  if(!(input_rmax > input_rmin)) {
+    printf("rmax must be greater than rmin!\n");
+    exit(-1);
+  }
+  if(input_boxsize <= 0.) {
     printf("boxsize must be positive!\n");
     exit(-1);
   }
 
-  size_t npointsA, npointsB;
+  size_t npointsA,npointsB;
   int ngrid;
-  ngrid = (int)input_ngrid;
+  nbins = input_nbins;
+  minr = input_rmin;
+  maxr = input_rmax;
   Lbox = (double)input_boxsize;
+  /* compute ngrid from rmax */
+  ngrid = (int)floor(Lbox/maxr);
 
   /* read from file */
   particle *pointsA = read_particles_hdf5(filenameA, "particles", &npointsA);
@@ -93,8 +109,6 @@ int main(int argc, char *argv[])
     pcounts[i] = (long int) 0;
     pcounts_naive[i] = (long int) 0;
   }
-  double maxr = grid1->Lbox/(double)(grid1->ngrid);
-  double minr = 0.1;
   double dlogr = (log10(maxr)-log10(minr))/(double)nbins;
   for(i=0;i<=nbins;i++) {
     double bin_edge = pow(10.0, ((double)i)*dlogr + log10(minr));
