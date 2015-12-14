@@ -103,18 +103,21 @@ int main(int argc, char *argv[])
   }
 
   cross_count_pairs(grid1, grid2, pcounts, bin_edges_sq, nbins);
+
 #ifdef TEST_ALL_PAIRS
   cross_count_pairs_naive(x1,y1,z1,npoints1, x2,y2,z2,npoints2, pcounts_naive, bin_edges_sq, nbins, Lbox);
 #endif
 
+  /* output pair counts */
+  printf("min_bin\tmax_bin\tbin_counts\tnatural_estimator\n");
   for(i=0;i<nbins;i++) {
     double ndensA = npointsA/CUBE(Lbox);
     double exp_counts = (4./3.)*M_PI*(CUBE(bin_edges[i+1])-CUBE(bin_edges[i]))*ndensA*npointsB;
-    printf("pair counts between (%lf, %lf] = %ld\n",bin_edges[i],bin_edges[i+1],pcounts[i]);
+    printf("%lf\t%lf\t%ld\t%lf\n",bin_edges[i],bin_edges[i+1],pcounts[i],(double)pcounts[i]/exp_counts);
+
 #ifdef TEST_ALL_PAIRS
     printf("(naive) pair counts between (%lf, %lf] = %ld\n",bin_edges[i],bin_edges[i+1],pcounts_naive[i]);
 #endif
-    printf("expected pair counts between (%lf, %lf] = %lf\n\n",bin_edges[i],bin_edges[i+1],exp_counts);
   }
 
   my_free(pcounts);

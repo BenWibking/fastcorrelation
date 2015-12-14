@@ -81,20 +81,21 @@ int main(int argc, char *argv[])
   }
 
   count_pairs(grid, pcounts, bin_edges_sq, nbins);
+
 #ifdef TEST_ALL_PAIRS
   count_pairs_naive(x,y,z, npoints, pcounts_naive, bin_edges_sq, nbins, Lbox);
 #endif
 
   /* output pair counts */
+  printf("min_bin\tmax_bin\tbin_counts\tnatural_estimator\n");
   for(i=0;i<nbins;i++) {
     double ndens = npoints/CUBE(Lbox);
     double exp_counts = (2./3.)*M_PI*(CUBE(bin_edges[i+1])-CUBE(bin_edges[i]))*ndens*npoints;
-    printf("pair counts between (%lf, %lf] = %ld\n",bin_edges[i],bin_edges[i+1],pcounts[i]);
+    printf("%lf\t%lf\t%ld\t%lf\n",bin_edges[i],bin_edges[i+1],pcounts[i],(double)pcounts[i]/exp_counts);
+
 #ifdef TEST_ALL_PAIRS
     printf("(naive) pair counts = %ld\n",pcounts_naive[i]);
 #endif
-    printf("expected pair counts = %lf\n",exp_counts);
-    printf("correlation function = %lf\n\n",(double)pcounts[i]/exp_counts);
   }
 
   /* free memory */

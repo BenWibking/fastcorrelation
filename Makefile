@@ -1,7 +1,7 @@
-CC=gcc -m64
-CFLAGS=-g -Wall -std=c99 -O0
-#CC=icc
-#CFLAGS=-O3 -Wall -march=native -std=c99
+#CC=gcc -m64
+#CFLAGS=-g -Wall -std=c99 -O0
+CC=icc
+CFLAGS=-O3 -Wall -march=native -std=c99
 INCLUDE=-I $(HOME)/include $(HDF5_C_INCLUDE) $(MPI_CFLAGS)
 LIB=-L $(HOME)/lib -lgsl -lgslcblas $(HDF5_C_LIBS)
 
