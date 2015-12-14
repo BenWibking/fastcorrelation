@@ -60,9 +60,9 @@ GHash* allocate_hash(int ngrid, double Lbox, size_t npoints, FLOAT * x, FLOAT * 
   size_t n;
   for(n=0;n<npoints;n++) {
     /* determine bin */
-    int ix = floor(x[n]/g->Lbox*((double)g->ngrid));
-    int iy = floor(y[n]/g->Lbox*((double)g->ngrid));
-    int iz = floor(z[n]/g->Lbox*((double)g->ngrid));
+    int ix = (int)floor(x[n]/g->Lbox*((double)g->ngrid)) % g->ngrid;
+    int iy = (int)floor(y[n]/g->Lbox*((double)g->ngrid)) % g->ngrid;
+    int iz = (int)floor(z[n]/g->Lbox*((double)g->ngrid)) % g->ngrid;
     /* increment bin counter */
     g->counts[INDEX(ix,iy,iz)]++;
   }
@@ -106,16 +106,17 @@ void free_hash(GHash * g)
   my_free(g);
 }
 
-void insert_particle(GHash * grid, FLOAT x, FLOAT y, FLOAT z)
+void insert_particle(GHash * grid, FLOAT x, FLOAT y, FLOAT z, size_t i)
 {
   /* compute ix,iy,iz coordinates */
-  int ix = floor(x/grid->Lbox*((double)grid->ngrid));
-  int iy = floor(y/grid->Lbox*((double)grid->ngrid));
-  int iz = floor(z/grid->Lbox*((double)grid->ngrid));
+  int ix = (int)floor(x/grid->Lbox*((double)grid->ngrid)) % grid->ngrid;
+  int iy = (int)floor(y/grid->Lbox*((double)grid->ngrid)) % grid->ngrid;
+  int iz = (int)floor(z/grid->Lbox*((double)grid->ngrid)) % grid->ngrid;
 
   int ngrid = grid->ngrid;
 
   size_t idx = grid->counts[INDEX(ix,iy,iz)];
+  size_t allocated = grid->allocated[INDEX(ix,iy,iz)];
   grid->x[INDEX(ix,iy,iz)][idx] = x;
   grid->y[INDEX(ix,iy,iz)][idx] = y;
   grid->z[INDEX(ix,iy,iz)][idx] = z;
@@ -128,6 +129,6 @@ void geometric_hash(GHash * grid, FLOAT *x, FLOAT *y, FLOAT *z, size_t npoints)
   size_t i;
   for(i=0;i<npoints;i++)
     {
-      insert_particle(grid, x[i],y[i],z[i]);
+      insert_particle(grid, x[i],y[i],z[i], i);
     }
 }

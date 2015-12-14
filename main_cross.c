@@ -58,6 +58,7 @@ int main(int argc, char *argv[])
     }
   for(n=0;n<npointsB;n++)
     {
+      //      printf("n: %ld x: %f y: %f z: %f\n",n,pointsB[n].x,pointsB[n].y,pointsB[n].z);
       x2[n] = pointsB[n].x;
       y2[n] = pointsB[n].y;
       z2[n] = pointsB[n].z;
@@ -67,7 +68,7 @@ int main(int argc, char *argv[])
   free(pointsB);
 
   /* hash into grid cells */
-  GHash *grid1 = allocate_hash(ngrid, Lbox, npointsA,x1, y1, z1);
+  GHash *grid1 = allocate_hash(ngrid, Lbox, npointsA, x1, y1, z1);
   GHash *grid2 = allocate_hash(ngrid, Lbox, npointsB, x2, y2, z2);
   if ((int)grid1 == 0) {
     printf("allocating grid1 failed!\n");
