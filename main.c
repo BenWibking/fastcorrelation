@@ -74,7 +74,9 @@ int main(int argc, char *argv[])
     exit(-1);
   }
 
+  fprintf(stderr,"computing geometric hash...");
   geometric_hash(grid, x, y, z, npoints);
+  fprintf(stderr,"done!\n");
 
   /* compute pair counts assuming periodic box */
   double *bin_edges_sq = my_malloc((nbins+1)*sizeof(double));
@@ -93,7 +95,9 @@ int main(int argc, char *argv[])
     bin_edges_sq[i] = SQ(bin_edge);
   }
 
+  fprintf(stderr,"computing pair counts...");
   count_pairs(grid, pcounts, bin_edges_sq, nbins);
+  fprintf(stderr,"done!\n");
 
 #ifdef TEST_ALL_PAIRS
   count_pairs_naive(x,y,z, npoints, pcounts_naive, bin_edges_sq, nbins, Lbox);
