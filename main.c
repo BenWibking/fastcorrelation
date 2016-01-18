@@ -20,8 +20,13 @@ int main(int argc, char *argv[])
   input_rmax = atof(argv[3]);
   input_boxsize = atof(argv[4]);
 
-  filename = malloc(sizeof(char)*strlen(argv[5]));
-  sprintf(filename,"%s",argv[5]);
+  filename = malloc(sizeof(char)*(strlen(argv[5])+1));
+  if(filename) { /* filename is not null */
+    sprintf(filename,"%s",argv[5]);
+  } else {
+    printf("malloc failure!\n");
+    exit(-1);
+  }
 
   if(input_nbins <= 0) {
     printf("ngrid must be positive!\n");

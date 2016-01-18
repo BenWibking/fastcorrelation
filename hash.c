@@ -3,10 +3,17 @@
 void* my_malloc(size_t size)
 {
 #ifdef __INTEL_COMPILER
-  return _mm_malloc(size,32);
+  void* pointer = _mm_malloc(size,32);
 #else
-  return malloc(size);
+  void* pointer = malloc(size);
 #endif
+  if(pointer) {
+    return pointer;
+  } else {
+    printf("malloc failure!\n");
+    exit(-1);
+    return 0;
+  }
 }
 
 void my_free(void* block)
@@ -28,7 +35,13 @@ void* my_realloc(void* old_block, size_t new_size, size_t old_size)
 #else
   void* new_block = realloc(old_block, new_size);
 #endif
-  return new_block;
+  if(new_block) {
+    return new_block;
+  } else {
+    printf("realloc failure!\n");
+    exit(-1);
+    return 0;
+  }
 }
 
 GHash* allocate_hash(int ngrid, double Lbox, size_t npoints, FLOAT * x, FLOAT * y, FLOAT * z)
@@ -63,8 +76,14 @@ GHash* allocate_hash(int ngrid, double Lbox, size_t npoints, FLOAT * x, FLOAT * 
     int ix = (int)floor(x[n]/g->Lbox*((double)g->ngrid)) % g->ngrid;
     int iy = (int)floor(y[n]/g->Lbox*((double)g->ngrid)) % g->ngrid;
     int iz = (int)floor(z[n]/g->Lbox*((double)g->ngrid)) % g->ngrid;
-    /* increment bin counter */
-    g->counts[INDEX(ix,iy,iz)]++;
+    if((ix>=0)&&(iy>=0)&&(iz>=0)) {
+      /* increment bin counter */
+      g->counts[INDEX(ix,iy,iz)]++;
+    } else {
+      printf("WARNING: negative spatial coordinate [%ld]: %lf %lf %lf\n",\
+	     n,x[n],y[n],z[n]);
+      printf("Skipping!\n");
+    }
   }
 
   /* now allocate cells */
@@ -113,14 +132,20 @@ void insert_particle(GHash * grid, FLOAT x, FLOAT y, FLOAT z, size_t i)
   int iy = (int)floor(y/grid->Lbox*((double)grid->ngrid)) % grid->ngrid;
   int iz = (int)floor(z/grid->Lbox*((double)grid->ngrid)) % grid->ngrid;
 
-  int ngrid = grid->ngrid;
+  if((ix>=0)&&(iy>=0)&&(iz>=0)) {
+    int ngrid = grid->ngrid;
 
-  size_t idx = grid->counts[INDEX(ix,iy,iz)];
-  size_t allocated = grid->allocated[INDEX(ix,iy,iz)];
-  grid->x[INDEX(ix,iy,iz)][idx] = x;
-  grid->y[INDEX(ix,iy,iz)][idx] = y;
-  grid->z[INDEX(ix,iy,iz)][idx] = z;
-  (grid->counts[INDEX(ix,iy,iz)])++;
+    size_t idx = grid->counts[INDEX(ix,iy,iz)];
+    size_t allocated = grid->allocated[INDEX(ix,iy,iz)];
+    grid->x[INDEX(ix,iy,iz)][idx] = x;
+    grid->y[INDEX(ix,iy,iz)][idx] = y;
+    grid->z[INDEX(ix,iy,iz)][idx] = z;
+    (grid->counts[INDEX(ix,iy,iz)])++;
+  } else {
+      printf("WARNING: negative spatial coordinate: %lf %lf %lf\n",\
+	     x,y,z);
+      printf("Skipping!\n");    
+  }
 }
 
 void geometric_hash(GHash * grid, FLOAT *x, FLOAT *y, FLOAT *z, size_t npoints)
