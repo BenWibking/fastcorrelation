@@ -24,7 +24,7 @@ int main(int argc, char *argv[])
   if(filename) { /* filename is not null */
     sprintf(filename,"%s",argv[5]);
   } else {
-    printf("malloc failure!\n");
+    printf("malloc failure! cannot allocate filename array\n");
     exit(-1);
   }
 

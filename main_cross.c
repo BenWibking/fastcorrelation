@@ -20,9 +20,9 @@ int main(int argc, char *argv[])
   input_rmax = atof(argv[3]);
   input_boxsize = atof(argv[4]);
 
-  filenameA = malloc(sizeof(char)*strlen(argv[5]));
+  filenameA = malloc(sizeof(char)*(strlen(argv[5])+1));
   sprintf(filenameA,"%s",argv[5]);
-  filenameB = malloc(sizeof(char)*strlen(argv[6]));
+  filenameB = malloc(sizeof(char)*(strlen(argv[6])+1));
   sprintf(filenameB,"%s",argv[6]);
 
   if(input_nbins <= 0) {

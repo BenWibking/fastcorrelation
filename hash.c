@@ -10,7 +10,7 @@ void* my_malloc(size_t size)
   if(pointer) {
     return pointer;
   } else {
-    printf("malloc failure!\n");
+    printf("malloc failure for size: %zu\n", size);
     exit(-1);
     return 0;
   }

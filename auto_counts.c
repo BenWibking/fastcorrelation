@@ -68,7 +68,7 @@ void count_pairs(GHash * restrict g, long int * restrict pcounts, double * restr
     for(iy=0;iy<ngrid;iy++) {
       for(iz=0;iz<ngrid;iz++) {
 
-	fprintf(stderr,"ix = %d; iy = %d; iz = %d\n",ix,iy,iz);
+	//	fprintf(stderr,"ix = %d; iy = %d; iz = %d\n",ix,iy,iz);
 
 	/* do this for each cell */
 	size_t count = g->counts[INDEX(ix,iy,iz)];
