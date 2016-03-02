@@ -44,14 +44,15 @@ void* my_realloc(void* old_block, size_t new_size, size_t old_size)
   }
 }
 
-GHash* allocate_hash(int ngrid, double Lbox, size_t npoints, FLOAT * x, FLOAT * y, FLOAT * z)
+GHash* allocate_hash(int ngrid, int njack, double Lbox, size_t npoints, FLOAT * x, FLOAT * y, FLOAT * z)
 {
-  if((ngrid <= 0) || (npoints <= 0)) {
+  if((ngrid <= 0) || (npoints <= 0) || (njack < 0)) {
     return (void*)0;
   }
 
   GHash * g    = my_malloc(sizeof(GHash));
   g->ngrid = ngrid;
+  g->njack = njack;
   g->Lbox = Lbox;
 
   g->counts    = my_malloc(ngrid*ngrid*ngrid*sizeof(size_t));
@@ -59,6 +60,7 @@ GHash* allocate_hash(int ngrid, double Lbox, size_t npoints, FLOAT * x, FLOAT * 
   g->x         = my_malloc(ngrid*ngrid*ngrid*sizeof(FLOAT*));
   g->y         = my_malloc(ngrid*ngrid*ngrid*sizeof(FLOAT*));
   g->z         = my_malloc(ngrid*ngrid*ngrid*sizeof(FLOAT*));
+  g->sample_excluded_from = my_malloc(ngrid*ngrid*ngrid*sizeof(grid_id));
 
   int i,j,k;
   for(i=0;i<ngrid;i++) {
@@ -94,8 +96,14 @@ GHash* allocate_hash(int ngrid, double Lbox, size_t npoints, FLOAT * x, FLOAT * 
 	g->x[INDEX(i,j,k)] = my_malloc(bin_count*sizeof(FLOAT));
 	g->y[INDEX(i,j,k)] = my_malloc(bin_count*sizeof(FLOAT));
 	g->z[INDEX(i,j,k)] = my_malloc(bin_count*sizeof(FLOAT));
+	g->sample_excluded_from[INDEX(i,j,k)] = my_malloc(bin_count*sizeof(grid_id));
 	g->allocated[INDEX(i,j,k)] = bin_count;
 	g->counts[INDEX(i,j,k)] = 0;
+	for(n=0; n<bin_count; n++) {
+	  g->sample_excluded_from[INDEX(i,j,k)][n].x = -1;
+	  g->sample_excluded_from[INDEX(i,j,k)][n].y = -1;
+	  g->sample_excluded_from[INDEX(i,j,k)][n].z = -1;
+	}
 	//	printf("allocating [%d][%d][%d] = %ld\n",i,j,k,g->allocated[INDEX(i,j,k)]);
       }
     }
@@ -116,12 +124,14 @@ void free_hash(GHash * g)
 	my_free(g->x[INDEX(i,j,k)]);
 	my_free(g->y[INDEX(i,j,k)]);
 	my_free(g->z[INDEX(i,j,k)]);
+	my_free(g->sample_excluded_from[INDEX(i,j,k)]);
       }
     }
   }
   my_free(g->x);
   my_free(g->y);
   my_free(g->z);
+  my_free(g->sample_excluded_from);
   my_free(g);
 }
 
@@ -132,6 +142,11 @@ void insert_particle(GHash * grid, FLOAT x, FLOAT y, FLOAT z, size_t i)
   int iy = (int)floor(y/grid->Lbox*((double)grid->ngrid)) % grid->ngrid;
   int iz = (int)floor(z/grid->Lbox*((double)grid->ngrid)) % grid->ngrid;
 
+  /* compute jackknife sample that is is excluded from */
+  int jx = (int)floor(x/grid->Lbox*((double)grid->njack)) % grid->njack;
+  int jy = (int)floor(y/grid->Lbox*((double)grid->njack)) % grid->njack;
+  int jz = (int)floor(z/grid->Lbox*((double)grid->njack)) % grid->njack;
+
   if((ix>=0)&&(iy>=0)&&(iz>=0)) {
     int ngrid = grid->ngrid;
 
@@ -140,6 +155,10 @@ void insert_particle(GHash * grid, FLOAT x, FLOAT y, FLOAT z, size_t i)
     grid->x[INDEX(ix,iy,iz)][idx] = x;
     grid->y[INDEX(ix,iy,iz)][idx] = y;
     grid->z[INDEX(ix,iy,iz)][idx] = z;
+    grid->sample_excluded_from[INDEX(ix,iy,iz)][idx].x = jx;
+    grid->sample_excluded_from[INDEX(ix,iy,iz)][idx].y = jy;
+    grid->sample_excluded_from[INDEX(ix,iy,iz)][idx].z = jz;
+
     (grid->counts[INDEX(ix,iy,iz)])++;
   } else {
       printf("WARNING: negative spatial coordinate: %lf %lf %lf\n",\

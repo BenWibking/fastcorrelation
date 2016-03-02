@@ -19,13 +19,21 @@
 #define PERIODIC(dx) ((dx>0.5*Lbox) ? (dx-Lbox) : dx)
 
 typedef struct {
+  int x;
+  int y;
+  int z;
+} grid_id;
+
+typedef struct {
   double Lbox;
   int ngrid;
+  int njack; /* the cube root of the number of jackknife samples */
   size_t * counts;
   size_t * allocated;
   FLOAT ** x;
   FLOAT ** y;
   FLOAT ** z;
+  grid_id ** sample_excluded_from;
 } GHash;
 
 
@@ -33,7 +41,7 @@ void my_free(void* block);
 void* my_malloc(size_t size);
 void* my_realloc(void* old_block, size_t new_size, size_t old_size);
 
-GHash* allocate_hash(int ngrid, double Lbox, size_t npoints, FLOAT * x, FLOAT * y, FLOAT * z);
+GHash* allocate_hash(int ngrid, int njack, double Lbox, size_t npoints, FLOAT * x, FLOAT * y, FLOAT * z);
 void free_hash(GHash * g);
 void geometric_hash(GHash * grid, FLOAT *x, FLOAT *y, FLOAT *z, size_t npoints);
 

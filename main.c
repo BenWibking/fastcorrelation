@@ -6,12 +6,12 @@ int main(int argc, char *argv[])
   int nbins;
   double Lbox, minr, maxr;
   int input_nbins;
-  float input_boxsize, input_rmin, input_rmax;
+  float input_boxsize, input_rmin, input_rmax, input_njackknife;
   char *filename;
 
   /* check inputs */
-  if(argc != 6) {
-    printf("./auto nbins rmin rmax box_size filename\n");
+  if(argc != 7) {
+    printf("./auto nbins rmin rmax box_size njackknife_samples filename\n");
     exit(-1);
   }
 
@@ -19,10 +19,11 @@ int main(int argc, char *argv[])
   input_rmin = atof(argv[2]);
   input_rmax = atof(argv[3]);
   input_boxsize = atof(argv[4]);
+  input_njackknife = atoi(argv[5]);
 
-  filename = malloc(sizeof(char)*(strlen(argv[5])+1));
+  filename = malloc(sizeof(char)*(strlen(argv[6])+1));
   if(filename) { /* filename is not null */
-    sprintf(filename,"%s",argv[5]);
+    sprintf(filename,"%s",argv[6]);
   } else {
     printf("malloc failure! cannot allocate filename array\n");
     exit(-1);
@@ -44,10 +45,19 @@ int main(int argc, char *argv[])
     printf("boxsize must be positive!\n");
     exit(-1);
   }
+  if(input_njackknife < 0) {
+    printf("njackknife_samples must be nonnegative!\n");
+    exit(-1);
+  }
+  if(pow(floor(pow((float)input_njackknife, 1./3.)), 3) != input_njackknife) {
+    printf("njackknife_samples must be a perfect cube!\n");
+    exit(-1);
+  }
 
   size_t npoints;
-  int ngrid;
+  int ngrid, njack;
   nbins = input_nbins;
+  njack = pow((float)input_njackknife, 1./3.);
   minr = input_rmin;
   maxr = input_rmax;
   Lbox = (double)input_boxsize;
@@ -73,7 +83,7 @@ int main(int argc, char *argv[])
   free(points);
 
   /* hash into grid cells */
-  GHash *grid = allocate_hash(ngrid, Lbox, npoints, x, y, z);
+  GHash *grid = allocate_hash(ngrid, njack, Lbox, npoints, x, y, z);
   if ((int)grid == 0) {
     printf("allocating grid failed!\n");
     exit(-1);
