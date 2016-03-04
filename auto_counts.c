@@ -2,8 +2,106 @@
 
 #define SIMD_WIDTH 4
 
-void count_pairs_naive(FLOAT * x, FLOAT * y, FLOAT * z, size_t npoints, long int * pcounts, double *  bin_edges_sq, const int nbins, const double Lbox)
+void count_pairs_disjoint(FLOAT * restrict x, FLOAT * restrict y, FLOAT * restrict z, FLOAT * restrict adj_x, FLOAT * restrict adj_y, FLOAT * restrict adj_z, size_t count, size_t adj_count, long int * pcounts, double *  bin_edges_sq, const int nbins, const double Lbox)
 {
+	      /* // scalar version
+	      size_t i,j;
+	      for(i=0;i<count;i++) {
+		for(j=0;j<adj_count;j++) {
+		  double dist_sq = SQ(PERIODIC(x[i]-adj_x[j])) + SQ(PERIODIC(y[i]-adj_y[j])) + SQ(PERIODIC(z[i]-adj_z[j]));
+		  int n;
+		  if(!(dist_sq > bin_edges_sq[nbins])) {
+		    for(n=nbins-1; n>=0; n--) {
+		      if(dist_sq > bin_edges_sq[n]) {
+			pcounts[n]++;
+			break;
+		      }
+		    }
+		  }
+		}
+		} */
+
+  /* SIMD version */
+  size_t i;
+  for(i=0;i<count;i++)
+    {
+      const size_t simd_size = adj_count/SIMD_WIDTH;
+      size_t jj;
+      for(jj=0;jj<simd_size;jj++)
+	{
+	  double dist_sq[SIMD_WIDTH];
+	  size_t k;
+#ifdef __INTEL_COMPILER
+	  __assume_aligned(x, 32);
+	  __assume_aligned(y, 32);
+	  __assume_aligned(z, 32);
+	  __assume_aligned(adj_x, 32);
+	  __assume_aligned(adj_y, 32);
+	  __assume_aligned(adj_z, 32);
+#endif
+	  //#pragma simd
+	  for(k=0;k<SIMD_WIDTH;k++)
+	    {
+	      const size_t kk = k+jj*SIMD_WIDTH;
+	      dist_sq[k] = SQ(PERIODIC(x[i]-adj_x[kk])) + SQ(PERIODIC(y[i]-adj_y[kk])) + SQ(PERIODIC(z[i]-adj_z[kk]));
+	    }
+	  
+	  for(k=0;k<SIMD_WIDTH;k++) {
+	    if(!(dist_sq[k] > bin_edges_sq[nbins])) {
+	      int n;
+	      for(n=nbins-1; n>=0; n--) {
+		if(dist_sq[k] > bin_edges_sq[n]) {
+		  pcounts[n]++;
+		  break;
+		}
+	      }
+	    }
+	  }
+	}
+      
+      size_t k;
+      for(k=((simd_size)*SIMD_WIDTH);k<adj_count;k++)
+	{
+	  double dist_sq = SQ(PERIODIC(x[i]-adj_x[k])) + SQ(PERIODIC(y[i]-adj_y[k])) + SQ(PERIODIC(z[i]-adj_z[k]));
+	  if(!(dist_sq > bin_edges_sq[nbins])) {
+	    int n;
+	    for(n=nbins-1; n>=0; n--) {
+	      if(dist_sq > bin_edges_sq[n]) {
+		pcounts[n]++;
+		break;
+	      }
+	    }
+	  }
+	}
+    }
+}
+
+
+void count_pairs_self(FLOAT * restrict x, FLOAT * restrict y, FLOAT * restrict z, size_t npoints, long int * pcounts, double *  bin_edges_sq, const int nbins, const double Lbox)
+{
+  /* // scalar version
+     size_t i,j;
+     for(i=0;i<count;i++)
+       {
+       for(j=0;j<count;j++)
+         {
+         if(i==j)
+           continue;
+     
+         double dist_sq = SQ(PERIODIC(x[i]-x[j])) + SQ(PERIODIC(y[i]-y[j])) + SQ(PERIODIC(z[i]-z[j]));
+         int n;
+         if(!(dist_sq > bin_edges_sq[nbins])) {
+           for(n=nbins-1; n>=0; n--) {
+             if(dist_sq > bin_edges_sq[n]) {
+               pcounts[n]++;
+               break;
+             }
+           }
+         }
+       }
+     } */
+
+  /* SIMD version */
   size_t i;
   for(i=0;i<npoints;i++)
     {
@@ -53,11 +151,17 @@ void count_pairs_naive(FLOAT * x, FLOAT * y, FLOAT * z, size_t npoints, long int
 	  }
 	}
     }
+}
 
-  for(i=0;i<nbins;i++) {
+void count_pairs_naive(FLOAT * x, FLOAT * y, FLOAT * z, size_t npoints, long int * pcounts, double *  bin_edges_sq, const int nbins, const double Lbox)
+{
+  count_pairs_self(x,y,z,npoints,pcounts,bin_edges_sq,nbins,Lbox);
+
+  for(int i=0;i<nbins;i++) {
     pcounts[i] = pcounts[i]/2;
   }  
 }
+
 
 void count_pairs(GHash * restrict g, long int * restrict pcounts, double * restrict bin_edges_sq, int nbins)
 {
@@ -75,77 +179,8 @@ void count_pairs(GHash * restrict g, long int * restrict pcounts, double * restr
 	FLOAT * restrict x = g->x[INDEX(ix,iy,iz)];
 	FLOAT * restrict y = g->y[INDEX(ix,iy,iz)];
 	FLOAT * restrict z = g->z[INDEX(ix,iy,iz)];
-	/* // scalar version
-	size_t i,j;
-	for(i=0;i<count;i++)
-	  {
-	    for(j=0;j<count;j++)
-	      {
-		if(i==j)
-		  continue;
 
-		double dist_sq = SQ(PERIODIC(x[i]-x[j])) + SQ(PERIODIC(y[i]-y[j])) + SQ(PERIODIC(z[i]-z[j]));
-		int n;
-		if(!(dist_sq > bin_edges_sq[nbins])) {
-		  for(n=nbins-1; n>=0; n--) {
-		    if(dist_sq > bin_edges_sq[n]) {
-		      pcounts[n]++;
-		      break;
-		    }
-		  }
-		}
-	      }
-	      } */
-
-	size_t i;
-	for(i=0;i<count;i++)
-	  {
-	    const size_t simd_size = count/SIMD_WIDTH;
-	    size_t jj;
-	    for(jj=0;jj<simd_size;jj++)
-	      {
-		double dist_sq[SIMD_WIDTH];
-		size_t k;
-#ifdef __INTEL_COMPILER
-		__assume_aligned(x, 32);
-		__assume_aligned(y, 32);
-		__assume_aligned(z, 32);
-#endif
-		//#pragma simd
-		for(k=0;k<SIMD_WIDTH;k++)
-		  {
-		    const size_t kk = k+jj*SIMD_WIDTH;
-		    dist_sq[k] = SQ(PERIODIC(x[i]-x[kk])) + SQ(PERIODIC(y[i]-y[kk])) + SQ(PERIODIC(z[i]-z[kk]));
-		  }
-		
-		for(k=0;k<SIMD_WIDTH;k++) {
-		  if(!(dist_sq[k] > bin_edges_sq[nbins])) {
-		    int n;
-		    for(n=nbins-1; n>=0; n--) {
-		      if(dist_sq[k] > bin_edges_sq[n]) {
-			pcounts[n]++;
-			break;
-		      }
-		    }
-		  }
-		}
-	      }
-	    
-	    size_t k;
-	    for(k=((simd_size)*SIMD_WIDTH);k<count;k++)
-	      {
-		double dist_sq = SQ(PERIODIC(x[i]-x[k])) + SQ(PERIODIC(y[i]-y[k])) + SQ(PERIODIC(z[i]-z[k]));
-		if(!(dist_sq > bin_edges_sq[nbins])) {
-		  int n;
-		  for(n=nbins-1; n>=0; n--) {
-		    if(dist_sq > bin_edges_sq[n]) {
-		      pcounts[n]++;
-		      break;
-		    }
-		  }
-		}
-	      }
-	  }
+	count_pairs_self(x,y,z,count,pcounts,bin_edges_sq,nbins,Lbox);
 	
 	int iix,iiy,iiz;
 	for(iix=-1;iix<=1;iix++) {
@@ -167,73 +202,8 @@ void count_pairs(GHash * restrict g, long int * restrict pcounts, double * restr
 	      FLOAT * restrict adj_y = g->y[INDEX(aix,aiy,aiz)];
 	      FLOAT * restrict adj_z = g->z[INDEX(aix,aiy,aiz)];
 
-	      /* // scalar version
-	      size_t i,j;
-	      for(i=0;i<count;i++) {
-		for(j=0;j<adj_count;j++) {
-		  double dist_sq = SQ(PERIODIC(x[i]-adj_x[j])) + SQ(PERIODIC(y[i]-adj_y[j])) + SQ(PERIODIC(z[i]-adj_z[j]));
-		  int n;
-		  if(!(dist_sq > bin_edges_sq[nbins])) {
-		    for(n=nbins-1; n>=0; n--) {
-		      if(dist_sq > bin_edges_sq[n]) {
-			pcounts[n]++;
-			break;
-		      }
-		    }
-		  }
-		}
-		} */
-	      
-	      /* SIMD version */
-	      size_t i;
-	      for(i=0;i<count;i++)
-		{
-		  const size_t simd_size = adj_count/SIMD_WIDTH;
-		  size_t jj;
-		  for(jj=0;jj<simd_size;jj++)
-		    {
-		      double dist_sq[SIMD_WIDTH];
-		      size_t k;
-#ifdef __INTEL_COMPILER
-		      __assume_aligned(adj_x, 32);
-		      __assume_aligned(adj_y, 32);
-		      __assume_aligned(adj_z, 32);
-#endif
-		      //#pragma simd
-		      for(k=0;k<SIMD_WIDTH;k++)
-			{
-			  const size_t kk = k+jj*SIMD_WIDTH;
-			  dist_sq[k] = SQ(PERIODIC(x[i]-adj_x[kk])) + SQ(PERIODIC(y[i]-adj_y[kk])) + SQ(PERIODIC(z[i]-adj_z[kk]));
-			}
-		      
-		      for(k=0;k<SIMD_WIDTH;k++) {
-			if(!(dist_sq[k] > bin_edges_sq[nbins])) {
-			  int n;
-			  for(n=nbins-1; n>=0; n--) {
-			    if(dist_sq[k] > bin_edges_sq[n]) {
-			      pcounts[n]++;
-			      break;
-			    }
-			  }
-			}
-		      }
-		    }
-		  
-		  size_t k;
-		  for(k=((simd_size)*SIMD_WIDTH);k<adj_count;k++)
-		    {
-		      double dist_sq = SQ(PERIODIC(x[i]-adj_x[k])) + SQ(PERIODIC(y[i]-adj_y[k])) + SQ(PERIODIC(z[i]-adj_z[k]));
-		      if(!(dist_sq > bin_edges_sq[nbins])) {
-			int n;
-			for(n=nbins-1; n>=0; n--) {
-			  if(dist_sq > bin_edges_sq[n]) {
-			    pcounts[n]++;
-			    break;
-			  }
-			}
-		      }
-		    }
-		}
+	      count_pairs_disjoint(x,y,z,adj_x,adj_y,adj_z,\
+				   count,adj_count,pcounts,bin_edges_sq,nbins,Lbox);
 
 	    }
 	  }
