@@ -54,7 +54,7 @@ int main(int argc, char *argv[])
   size_t npoints;
   int ngrid, njack;
   nbins = input_nbins;
-  njack = pow((float)input_njackknife, 1./3.);
+  njack = input_njackknife;
   minr = input_rmin;
   maxr = input_rmax;
   Lbox = (double)input_boxsize;
@@ -75,8 +75,7 @@ int main(int argc, char *argv[])
   int seed = 42;
   gsl_rng_set(r, seed); /* Seeding random distribution */
 
-  size_t n;
-  for(n=0;n<npoints;n++)
+  for(size_t n=0;n<npoints;n++)
     {
       x[n] = gsl_rng_uniform(r)*Lbox;
       y[n] = gsl_rng_uniform(r)*Lbox;
@@ -98,31 +97,46 @@ int main(int argc, char *argv[])
   double *bin_edges_sq = my_malloc((nbins+1)*sizeof(double));
   double *bin_edges = my_malloc((nbins+1)*sizeof(double));
   long int *pcounts = my_malloc(nbins*sizeof(long int));
+  long int *pcounts_jackknife = my_malloc(njack*nbins*sizeof(long int));
   long int *pcounts_naive = my_malloc(nbins*sizeof(long int));
-  int i;
-  for(i=0;i<nbins;i++) {
+  long int *pcounts_jackknife_naive = my_malloc(njack*nbins*sizeof(long int));
+
+  for(int i=0;i<nbins;i++) {
     pcounts[i] = (long int) 0;
     pcounts_naive[i] = (long int) 0;
   }
+  for(int i=0;i<njack;i++) {
+    for(int j=0;j<nbins;j++) {
+      pcounts_jackknife[i*nbins + j] = (long int) 0;
+      pcounts_jackknife_naive[i*nbins + j] = (long int) 0;
+    }
+  }
   double dlogr = (log10(maxr)-log10(minr))/(double)nbins;
-  for(i=0;i<=nbins;i++) {
+  for(int i=0;i<=nbins;i++) {
     double bin_edge = pow(10.0, ((double)i)*dlogr + log10(minr));
     bin_edges[i] = bin_edge;
     bin_edges_sq[i] = SQ(bin_edge);
   }
 
   fprintf(stderr,"computing pair counts...");
-  count_pairs(grid, pcounts, bin_edges_sq, nbins);
+  count_pairs(grid, pcounts, pcounts_jackknife, bin_edges_sq, nbins);
   fprintf(stderr,"done!\n");
 
-  count_pairs_naive(x,y,z, npoints, pcounts_naive, bin_edges_sq, nbins, Lbox);
+  count_pairs_naive(x,y,z, grid->sample_excluded_from, npoints, pcounts_naive, pcounts_jackknife_naive, \
+		    bin_edges_sq, nbins, njack, Lbox);
 
   /* output pair counts */
   printf("min_bin\tmax_bin\tbin_counts\tnatural_estimator\n");
-  for(i=0;i<nbins;i++) {
+  for(int i=0;i<nbins;i++) {
     double ndens = npoints/CUBE(Lbox);
     double exp_counts = (2./3.)*M_PI*(CUBE(bin_edges[i+1])-CUBE(bin_edges[i]))*ndens*npoints;
-    printf("%lf\t%lf\t%ld\t%lf\n",bin_edges[i],bin_edges[i+1],pcounts[i],(double)pcounts[i]/exp_counts);
+    double exp_counts_jackknife = exp_counts*(double)((njack-1)/njack);
+    printf("%lf\t%lf\t%ld\t%lf",bin_edges[i],bin_edges[i+1],pcounts[i],(double)pcounts[i]/exp_counts);
+    for(int j=0;j<njack;j++) {
+      printf("\t%lf",(double)pcounts_jackknife[j*nbins + i]);
+      //      printf("\t%lf",(double)pcounts_jackknife_naive[j*nbins + i]);
+    }
+    printf("\n");
 
     printf("(naive) pair counts = %ld\n",pcounts_naive[i]);
   }

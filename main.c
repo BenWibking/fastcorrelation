@@ -57,7 +57,7 @@ int main(int argc, char *argv[])
   size_t npoints;
   int ngrid, njack;
   nbins = input_nbins;
-  njack = pow((float)input_njackknife, 1./3.);
+  njack = input_njackknife;
   minr = input_rmin;
   maxr = input_rmax;
   Lbox = (double)input_boxsize;
@@ -97,11 +97,18 @@ int main(int argc, char *argv[])
   double *bin_edges_sq = my_malloc((nbins+1)*sizeof(double));
   double *bin_edges = my_malloc((nbins+1)*sizeof(double));
   long int *pcounts = my_malloc(nbins*sizeof(long int));
+  long int *pcounts_jackknife = my_malloc(njack*nbins*sizeof(long int));
   long int *pcounts_naive = my_malloc(nbins*sizeof(long int));
+  long int *pcounts_jackknife_naive = my_malloc(njack*nbins*sizeof(long int));
   int i;
   for(i=0;i<nbins;i++) {
     pcounts[i] = (long int) 0;
     pcounts_naive[i] = (long int) 0;
+  }
+  for(int i=0;i<njack;i++) {
+    for(int j=0;j<nbins;j++) {
+      pcounts_jackknife[i*nbins + j] = (long int) 0;
+    }
   }
   double dlogr = (log10(maxr)-log10(minr))/(double)nbins;
   for(i=0;i<=nbins;i++) {
@@ -111,11 +118,11 @@ int main(int argc, char *argv[])
   }
 
   fprintf(stderr,"computing pair counts...");
-  count_pairs(grid, pcounts, bin_edges_sq, nbins);
+  count_pairs(grid, pcounts, pcounts_jackknife, bin_edges_sq, nbins);
   fprintf(stderr,"done!\n");
 
 #ifdef TEST_ALL_PAIRS
-  count_pairs_naive(x,y,z, npoints, pcounts_naive, bin_edges_sq, nbins, Lbox);
+  count_pairs_naive(x,y,z, npoints, pcounts_naive, pcounts_jackknife, bin_edges_sq, nbins, njack, Lbox);
 #endif
 
   /* output pair counts */
@@ -123,7 +130,12 @@ int main(int argc, char *argv[])
   for(i=0;i<nbins;i++) {
     double ndens = npoints/CUBE(Lbox);
     double exp_counts = (2./3.)*M_PI*(CUBE(bin_edges[i+1])-CUBE(bin_edges[i]))*ndens*npoints;
-    printf("%lf\t%lf\t%ld\t%lf\n",bin_edges[i],bin_edges[i+1],pcounts[i],(double)pcounts[i]/exp_counts);
+    double exp_counts_jackknife = exp_counts*(double)((njack-1)/njack);
+    printf("%lf\t%lf\t%ld\t%lf",bin_edges[i],bin_edges[i+1],pcounts[i],(double)pcounts[i]/exp_counts);
+    for(int j=0;j<njack;j++) {
+      printf("\t%lf",(double)pcounts_jackknife[j*nbins + i]/exp_counts_jackknife);
+    }
+    printf("\n");
 
 #ifdef TEST_ALL_PAIRS
     printf("(naive) pair counts = %ld\n",pcounts_naive[i]);
@@ -132,6 +144,7 @@ int main(int argc, char *argv[])
 
   /* free memory */
   my_free(pcounts);
+  my_free(pcounts_jackknife);
   my_free(bin_edges);
   my_free(bin_edges_sq);
 
