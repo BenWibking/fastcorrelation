@@ -52,7 +52,7 @@ GHash* allocate_hash(int ngrid, int njack, double Lbox, size_t npoints, FLOAT * 
 
   GHash * g    = my_malloc(sizeof(GHash));
   g->ngrid = ngrid;
-  g->njack = njack;
+  g->njack = (int)pow((float)njack, 1./3.);
   g->Lbox = Lbox;
 
   g->counts    = my_malloc(ngrid*ngrid*ngrid*sizeof(size_t));

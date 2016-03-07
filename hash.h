@@ -45,8 +45,11 @@ GHash* allocate_hash(int ngrid, int njack, double Lbox, size_t npoints, FLOAT * 
 void free_hash(GHash * g);
 void geometric_hash(GHash * grid, FLOAT *x, FLOAT *y, FLOAT *z, size_t npoints);
 
-void count_pairs_naive(double * restrict x, double * restrict y, double * restrict z, size_t npoints, long int * restrict pcounts, double * restrict bin_edges_sq, int nbins, double Lbox);
-void count_pairs(GHash * restrict g, long int * restrict pcounts, double * restrict bin_edges_sq, int nbins);
+void count_pairs_disjoint(FLOAT * restrict x, FLOAT * restrict y, FLOAT * restrict z, void * restrict label, FLOAT * restrict adj_x, FLOAT * restrict adj_y, FLOAT * restrict adj_z, void * restrict adj_label, size_t count, size_t adj_count, long int * pcounts, long int * pcounts_jackknife, double *  bin_edges_sq, const int nbins, const int njack, const double Lbox);
+void count_pairs_self(FLOAT * restrict x, FLOAT * restrict y, FLOAT * restrict z, void * restrict label, size_t npoints, long int * pcounts, long int * pcounts_jackknife, double *  bin_edges_sq, const int nbins, const int njack, const double Lbox);
+
+void count_pairs_naive(FLOAT * x, FLOAT * y, FLOAT * z, void * label, size_t npoints, long int * pcounts, long int * pcounts_jackknife, double *  bin_edges_sq, const int nbins, const int njack, const double Lbox);
+void count_pairs(GHash * restrict g, long int * restrict pcounts, long int * restrict pcounts_jackknife, double * restrict bin_edges_sq, int nbins);
 
 void cross_count_pairs_naive(FLOAT * x1, FLOAT * y1, FLOAT * z1, size_t npoints1, FLOAT * x2, FLOAT * y2, FLOAT * z2, size_t npoints2, long int * pcounts, double *  bin_edges_sq, const int nbins, const double Lbox);
 void cross_count_pairs(GHash * restrict g1, GHash * restrict g2, long int * restrict pcounts, double * restrict bin_edges_sq, int nbins);

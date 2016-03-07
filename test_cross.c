@@ -5,13 +5,12 @@ int main(int argc, char *argv[])
   /* input: number of points to test, number of cells per axis */
   int nbins;
   double Lbox, minr, maxr;
-  int input_nbins, input_njack;
+  int input_nbins, input_npointsA, input_npointsB, input_njack;
   float input_boxsize, input_rmin, input_rmax;
-  char *filenameA, *filenameB;
 
   /* check inputs */
   if(argc != 8) {
-    printf("./auto nbins rmin rmax box_size njackknife_samples filenameA filenameB\n");
+    printf("./auto nbins rmin rmax box_size njackknife_samples npointsA npointsB\n");
     exit(-1);
   }
 
@@ -20,20 +19,29 @@ int main(int argc, char *argv[])
   input_rmax = atof(argv[3]);
   input_boxsize = atof(argv[4]);
   input_njack = atoi(argv[5]);
+  input_npointsA = atoi(argv[6]);
+  input_npointsB = atoi(argv[7]);
 
-  filenameA = malloc(sizeof(char)*(strlen(argv[6])+1));
-  sprintf(filenameA,"%s",argv[6]);
-  filenameB = malloc(sizeof(char)*(strlen(argv[7])+1));
-  sprintf(filenameB,"%s",argv[7]);
+  if(input_npointsA <= 0) {
+    printf("npointsA must be positive!\n");
+    exit(-1);
+  }
+
+  if(input_npointsB <= 0) {
+    printf("npointsB must be positive!\n");
+    exit(-1);
+  }
 
   if(input_nbins <= 0) {
     printf("ngrid must be positive!\n");
     exit(-1);
   }
+
   if(input_njack <= 0) {
     printf("njackknife_samples must be positive!\n");
     exit(-1);
   }
+
   if(input_rmin <= 0.) {
     printf("rmin must be positive!\n");
     exit(-1);
@@ -49,17 +57,15 @@ int main(int argc, char *argv[])
 
   size_t npointsA,npointsB;
   int ngrid, njack;
-  nbins = input_nbins;
   njack = input_njack;
+  nbins = input_nbins;
   minr = input_rmin;
   maxr = input_rmax;
   Lbox = (double)input_boxsize;
   /* compute ngrid from rmax */
   ngrid = (int)floor(Lbox/maxr);
-
-  /* read from file */
-  particle *pointsA = read_particles_hdf5(filenameA, "particles", &npointsA);
-  particle *pointsB = read_particles_hdf5(filenameB, "particles", &npointsB);
+  npointsA = input_npointsA;
+  npointsB = input_npointsB;
 
   /* generate random points (x,y,z) in unit cube */
   // separate arrays (or Fortran-style arrays) are necessary both for SIMD and cache efficiency
@@ -70,25 +76,31 @@ int main(int argc, char *argv[])
   FLOAT *x2 = (FLOAT*) my_malloc(npointsB*sizeof(FLOAT));
   FLOAT *y2 = (FLOAT*) my_malloc(npointsB*sizeof(FLOAT));
   FLOAT *z2 = (FLOAT*) my_malloc(npointsB*sizeof(FLOAT));
-  
+
+  const gsl_rng_type * T;
+  gsl_rng * r;
+  gsl_rng_env_setup();
+  T = gsl_rng_default;
+  r = gsl_rng_alloc(T);
+  int seed = 42;
+  gsl_rng_set(r, seed); /* Seeding random distribution */
+
   size_t n;
   for(n=0;n<npointsA;n++)
     {
-      x1[n] = pointsA[n].x;
-      y1[n] = pointsA[n].y;
-      z1[n] = pointsA[n].z;
+      x1[n] = gsl_rng_uniform(r)*Lbox;
+      y1[n] = gsl_rng_uniform(r)*Lbox;
+      z1[n] = gsl_rng_uniform(r)*Lbox;
     }
   for(n=0;n<npointsB;n++)
     {
-      //      printf("n: %ld x: %f y: %f z: %f\n",n,pointsB[n].x,pointsB[n].y,pointsB[n].z);
-      x2[n] = pointsB[n].x;
-      y2[n] = pointsB[n].y;
-      z2[n] = pointsB[n].z;
+      x2[n] = gsl_rng_uniform(r)*Lbox;
+      y2[n] = gsl_rng_uniform(r)*Lbox;
+      z2[n] = gsl_rng_uniform(r)*Lbox;
     }
 
-  free(pointsA);
-  free(pointsB);
-
+  gsl_rng_free(r);
+  
   /* hash into grid cells */
   GHash *grid1 = allocate_hash(ngrid, njack, Lbox, npointsA, x1, y1, z1);
   GHash *grid2 = allocate_hash(ngrid, njack, Lbox, npointsB, x2, y2, z2);
@@ -124,9 +136,7 @@ int main(int argc, char *argv[])
 
   cross_count_pairs(grid1, grid2, pcounts, bin_edges_sq, nbins);
 
-#ifdef TEST_ALL_PAIRS
-  cross_count_pairs_naive(x1,y1,z1,npoints1, x2,y2,z2,npoints2, pcounts_naive, bin_edges_sq, nbins, Lbox);
-#endif
+  cross_count_pairs_naive(x1,y1,z1,npointsA, x2,y2,z2,npointsB, pcounts_naive, bin_edges_sq, nbins, Lbox);
 
   /* output pair counts */
   printf("min_bin\tmax_bin\tbin_counts\tnatural_estimator\n");
@@ -135,9 +145,7 @@ int main(int argc, char *argv[])
     double exp_counts = (4./3.)*M_PI*(CUBE(bin_edges[i+1])-CUBE(bin_edges[i]))*ndensA*npointsB;
     printf("%lf\t%lf\t%ld\t%lf\n",bin_edges[i],bin_edges[i+1],pcounts[i],(double)pcounts[i]/exp_counts);
 
-#ifdef TEST_ALL_PAIRS
     printf("(naive) pair counts between (%lf, %lf] = %ld\n",bin_edges[i],bin_edges[i+1],pcounts_naive[i]);
-#endif
   }
 
   my_free(pcounts);
