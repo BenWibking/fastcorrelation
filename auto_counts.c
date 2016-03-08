@@ -181,8 +181,9 @@ void count_pairs_self(FLOAT * restrict x, FLOAT * restrict y, FLOAT * restrict z
 		  int c = label[i] -> z;
 		  int nsample = c + pow(njack,1.0/3.0)*(b + pow(njack,1.0/3.0)*a);
 		  if(p==nsample){
-		  pcounts_jackknife[p*nbins + n]++; /* add to every histogram */
+		  	pcounts_jackknife[p*nbins + n]++; /* add to every histogram */
 		  }
+		  break;
 		}
 		break;
 	      }
