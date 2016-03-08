@@ -53,9 +53,9 @@ void count_pairs_disjoint(FLOAT * restrict x, FLOAT * restrict y, FLOAT * restri
 		if(dist_sq[k] > bin_edges_sq[n]) {
 		  pcounts[n]++;
 		  for(int p=0;p<njack;p++) {
-		    int a = label[i] -> x;
-		    int b = label[i] -> y;
-		    int c = label[i] -> z;
+		    int a = (grid_id*)label[i] -> x;
+		    int b = (grid_id*)label[i] -> y;
+		    int c = (grid_id*)label[i] -> z;
 		    int nsample = c + pow(njack,1.0/3.0)*(b + pow(njack,1.0/3.0)*a);
 		    if(p==nsample){
 		    	pcounts_jackknife[p*nbins + n]++; /* add to every histogram */
@@ -79,9 +79,9 @@ void count_pairs_disjoint(FLOAT * restrict x, FLOAT * restrict y, FLOAT * restri
 	      if(dist_sq > bin_edges_sq[n]) {
 		pcounts[n]++;
 		for(int p=0;p<njack;p++) {
-		  int a = label[i] -> x;
-		  int b = label[i] -> y;
-		  int c = label[i] -> z;
+		  int a = (grid_id*)label[i] -> x;
+		  int b = (grid_id*)label[i] -> y;
+		  int c = (grid_id*)label[i] -> z;
 		  int nsample = c + pow(njack,1.0/3.0)*(b + pow(njack,1.0/3.0)*a);
 		  if(p==nsample){
 		      pcounts_jackknife[p*nbins + n]++; /* add to every histogram */
@@ -150,9 +150,9 @@ void count_pairs_self(FLOAT * restrict x, FLOAT * restrict y, FLOAT * restrict z
 		if(dist_sq[k] > bin_edges_sq[n]) {
 		  pcounts[n]++;
 		  for(int p=0;p<njack;p++) {
-		  int a = label[i] -> x;
-		  int b = label[i] -> y;
-		  int c = label[i] -> z;
+		  int a = (grid_id*)label[i] -> x;
+		  int b = (grid_id*)label[i] -> y;
+		  int c = (grid_id*)label[i] -> z;
 		  int nsample = c + pow(njack,1.0/3.0)*(b + pow(njack,1.0/3.0)*a);
 		  if(p==nsample){
 		  	pcounts_jackknife[p*nbins + n]++; /* add to every histogram */
@@ -176,9 +176,9 @@ void count_pairs_self(FLOAT * restrict x, FLOAT * restrict y, FLOAT * restrict z
 	      if(dist_sq > bin_edges_sq[n]) {
 		pcounts[n]++;
 		for(int p=0;p<njack;p++) {
-		  int a = label[i] -> x;
-		  int b = label[i] -> y;
-		  int c = label[i] -> z;
+		  int a = (grid_id*)label[i] -> x;
+		  int b = (grid_id*)label[i] -> y;
+		  int c = (grid_id*)label[i] -> z;
 		  int nsample = c + pow(njack,1.0/3.0)*(b + pow(njack,1.0/3.0)*a);
 		  if(p==nsample){
 		  	pcounts_jackknife[p*nbins + n]++; /* add to every histogram */
