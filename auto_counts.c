@@ -53,7 +53,14 @@ void count_pairs_disjoint(FLOAT * restrict x, FLOAT * restrict y, FLOAT * restri
 		if(dist_sq[k] > bin_edges_sq[n]) {
 		  pcounts[n]++;
 		  for(int p=0;p<njack;p++) {
-		    pcounts_jackknife[p*nbins + n]++; /* add to every histogram */
+		    int a = label[i] -> x;
+		    int b = label[i] -> y;
+		    int c = label[i] -> z;
+		    int nsample = c + pow(njack,1.0/3.0)*(b + pow(njack,1.0/3.0)*a);
+		    if(p==nsample){
+		    	pcounts_jackknife[p*nbins + n]++; /* add to every histogram */
+		    }
+		    break;
 		  }
 		  break;
 		}
@@ -72,7 +79,14 @@ void count_pairs_disjoint(FLOAT * restrict x, FLOAT * restrict y, FLOAT * restri
 	      if(dist_sq > bin_edges_sq[n]) {
 		pcounts[n]++;
 		for(int p=0;p<njack;p++) {
-		  pcounts_jackknife[p*nbins + n]++; /* add to every histogram */
+		  int a = label[i] -> x;
+		  int b = label[i] -> y;
+		  int c = label[i] -> z;
+		  int nsample = c + pow(njack,1.0/3.0)*(b + pow(njack,1.0/3.0)*a);
+		  if(p==nsample){
+		      pcounts_jackknife[p*nbins + n]++; /* add to every histogram */
+		  }
+		  break;
 		}
 		break;
 	      }
@@ -136,7 +150,14 @@ void count_pairs_self(FLOAT * restrict x, FLOAT * restrict y, FLOAT * restrict z
 		if(dist_sq[k] > bin_edges_sq[n]) {
 		  pcounts[n]++;
 		  for(int p=0;p<njack;p++) {
-		    pcounts_jackknife[p*nbins + n]++; /* add to every histogram */
+		  int a = label[i] -> x;
+		  int b = label[i] -> y;
+		  int c = label[i] -> z;
+		  int nsample = c + pow(njack,1.0/3.0)*(b + pow(njack,1.0/3.0)*a);
+		  if(p==nsample){
+		  	pcounts_jackknife[p*nbins + n]++; /* add to every histogram */
+		  }
+		  break;
 		  }
 		  break;
 		}
@@ -155,7 +176,13 @@ void count_pairs_self(FLOAT * restrict x, FLOAT * restrict y, FLOAT * restrict z
 	      if(dist_sq > bin_edges_sq[n]) {
 		pcounts[n]++;
 		for(int p=0;p<njack;p++) {
+		  int a = label[i] -> x;
+		  int b = label[i] -> y;
+		  int c = label[i] -> z;
+		  int nsample = c + pow(njack,1.0/3.0)*(b + pow(njack,1.0/3.0)*a);
+		  if(p==nsample){
 		  pcounts_jackknife[p*nbins + n]++; /* add to every histogram */
+		  }
 		}
 		break;
 	      }
@@ -223,7 +250,7 @@ void count_pairs(GHash * restrict g, long int * restrict pcounts, long int * res
 	      FLOAT * restrict adj_z = g->z[INDEX(aix,aiy,aiz)];
 	      void * restrict adj_label = g->sample_excluded_from[INDEX(ix,iy,iz)];
 
-	      count_pairs_disjoint(x,y,z,label,adj_x,adj_y,adj_z,label,	\
+	      count_pairs_disjoint(x,y,z,label,adj_x,adj_y,adj_z,adj_label,	\
 				   count,adj_count,pcounts,pcounts_jackknife,bin_edges_sq,nbins,njack,Lbox);
 
 	    }
