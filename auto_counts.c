@@ -53,14 +53,17 @@ void count_pairs_disjoint(FLOAT * restrict x, FLOAT * restrict y, FLOAT * restri
 	      for(n=nbins-1; n>=0; n--) {
 		if(dist_sq[k] > bin_edges_sq[n]) {
 		  pcounts[n]++;
+		  int a = label[i].x;
+		  int b = label[i].y;
+		  int c = label[i].z;
+		  int nsample = c + Nj*(b + Nj*a);
 		  for(int p=0;p<njack;p++) {
-		    int a = label[i].x;
-		    int b = label[i].y;
-		    int c = label[i].z;
-		    int nsample = c + Nj*(b + Nj*a);
-		    if(p==nsample){
-		    	pcounts_jackknife[nsample*nbins + n]++; /* add to every histogram */
-		    }
+		    if(p==nsample){ 
+		      pcounts_jackknife[nsample*nbins + n]++; 
+		      } /*Bootstrap*/
+		    /*if(p=!nsample){
+		      pcounts_jackknife[nsample*nbins + n]++;
+		      }*/ /*Jackknife*/
 		  }
 		  break;
 		}
@@ -78,14 +81,17 @@ void count_pairs_disjoint(FLOAT * restrict x, FLOAT * restrict y, FLOAT * restri
 	    for(n=nbins-1; n>=0; n--) {
 	      if(dist_sq > bin_edges_sq[n]) {
 		pcounts[n]++;
+		int a = label[i].x;
+		int b = label[i].y;
+		int c = label[i].z;
+		int nsample = c + Nj*(b + Nj*a);
 		for(int p=0;p<njack;p++) {
-		  int a = label[i].x;
-		  int b = label[i].y;
-		  int c = label[i].z;
-		  int nsample = c + Nj*(b + Nj*a);
 		  if(p==nsample){
-		    pcounts_jackknife[nsample*nbins + n]++; /* add to every histogram */
-		  }
+		    pcounts_jackknife[nsample*nbins + n]++; 
+		  } /*Bootstrap*/
+		  /*if(p=!nsample){
+		      pcounts_jackknife[nsample*nbins + n]++;
+		      }*/ /*Jackknife*/
 		}
 		break;
 	      }
@@ -149,14 +155,17 @@ void count_pairs_self(FLOAT * restrict x, FLOAT * restrict y, FLOAT * restrict z
 	      for(n=nbins-1; n>=0; n--) {
 		if(dist_sq[k] > bin_edges_sq[n]) {
 		  pcounts[n]++;
-		  for(int p=0;p<njack;p++) {
 		  int a = label[i].x;
 		  int b = label[i].y;
 		  int c = label[i].z;
 		  int nsample = c + Nj*(b + Nj*a);
-		  if(p==nsample){
-		  	pcounts_jackknife[p*nbins + n]++; /* add to every histogram */
-		  }
+		  for(int p=0;p<njack;p++) {
+		    if(p==nsample){
+		  	pcounts_jackknife[p*nbins + n]++;
+		    } /*Bootstrap*/
+		    /*if(p=!nsample){
+		        pcounts_jackknife[nsample*nbins + n]++;
+			}*/ /*Jackknife*/
 		  }
 		  break;
 		}
@@ -174,14 +183,17 @@ void count_pairs_self(FLOAT * restrict x, FLOAT * restrict y, FLOAT * restrict z
 	    for(n=nbins-1; n>=0; n--) {
 	      if(dist_sq > bin_edges_sq[n]) {
 		pcounts[n]++;
+		int a = label[i].x;
+		int b = label[i].y;
+		int c = label[i].z;
+		int nsample = c + Nj*(b + Nj*a);
 		for(int p=0;p<njack;p++) {
-		  int a = label[i].x;
-		  int b = label[i].y;
-		  int c = label[i].z;
-		  int nsample = c + Nj*(b + Nj*a);
 		  if(p==nsample){
-		  	pcounts_jackknife[p*nbins + n]++; /* add to every histogram */
-		  }
+		  	pcounts_jackknife[p*nbins + n]++;
+		  } /*Bootstrap*/
+		  /*if(p=!nsample){
+		        pcounts_jackknife[nsample*nbins + n]++;
+		  }*/ /*Jackknife*/
 		}
 		break;
 	      }
@@ -267,7 +279,6 @@ void count_pairs(GHash * restrict g, long int * restrict pcounts, long int * res
   for(int j=0;j<njack;j++) {
     for(int i=0;i<nbins;i++) {
       pcounts_jackknife[j*nbins + i] = pcounts_jackknife[j*nbins + i]/2;
-      printf("%ld\n", pcounts_jackknife[j*nbins + i]);
     }
   }
 
