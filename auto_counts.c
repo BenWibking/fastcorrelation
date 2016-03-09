@@ -23,6 +23,7 @@ void count_pairs_disjoint(FLOAT * restrict x, FLOAT * restrict y, FLOAT * restri
 
   /* SIMD version */
   size_t i;
+  int Nj = pow(njack, 1.0/3.0);
   for(i=0;i<count;i++)
     {
       const size_t simd_size = adj_count/SIMD_WIDTH;
@@ -82,7 +83,7 @@ void count_pairs_disjoint(FLOAT * restrict x, FLOAT * restrict y, FLOAT * restri
 		  int a = (grid_id*)label[i] -> x;
 		  int b = (grid_id*)label[i] -> y;
 		  int c = (grid_id*)label[i] -> z;
-		  int nsample = c + pow(njack,1.0/3.0)*(b + pow(njack,1.0/3.0)*a);
+		  int nsample = c + Nj*(b + Nj*a);
 		  if(p==nsample){
 		      pcounts_jackknife[p*nbins + n]++; /* add to every histogram */
 		  }
@@ -123,6 +124,7 @@ void count_pairs_self(FLOAT * restrict x, FLOAT * restrict y, FLOAT * restrict z
 
   /* SIMD version */
   size_t i;
+  int Nj = pow(njack, 1.0/3.0);
   for(i=0;i<npoints;i++)
     {
       const size_t simd_size = npoints/SIMD_WIDTH;
@@ -153,7 +155,7 @@ void count_pairs_self(FLOAT * restrict x, FLOAT * restrict y, FLOAT * restrict z
 		  int a = (grid_id*)label[i] -> x;
 		  int b = (grid_id*)label[i] -> y;
 		  int c = (grid_id*)label[i] -> z;
-		  int nsample = c + pow(njack,1.0/3.0)*(b + pow(njack,1.0/3.0)*a);
+		  int nsample = c + Nj*(b + Nj*a);
 		  if(p==nsample){
 		  	pcounts_jackknife[p*nbins + n]++; /* add to every histogram */
 		  }
@@ -179,7 +181,7 @@ void count_pairs_self(FLOAT * restrict x, FLOAT * restrict y, FLOAT * restrict z
 		  int a = (grid_id*)label[i] -> x;
 		  int b = (grid_id*)label[i] -> y;
 		  int c = (grid_id*)label[i] -> z;
-		  int nsample = c + pow(njack,1.0/3.0)*(b + pow(njack,1.0/3.0)*a);
+		  int nsample = c + Nj*(b + Nj*a);
 		  if(p==nsample){
 		  	pcounts_jackknife[p*nbins + n]++; /* add to every histogram */
 		  }
