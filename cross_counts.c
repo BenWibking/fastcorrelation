@@ -2,9 +2,10 @@
 
 #define SIMD_WIDTH 4
 
-void count_pairs_disjoint(FLOAT * x1, FLOAT * y1, FLOAT * z1, size_t npoints1, FLOAT * x2, FLOAT * y2, FLOAT * z2, size_t npoints2, long int * pcounts, double *  bin_edges_sq, const int nbins, const double Lbox)
+void count_pairs_disjoint(FLOAT * x1, FLOAT * y1, FLOAT * z1, grid_id * restrict label1, size_t npoints1, FLOAT * x2, FLOAT * y2, FLOAT * z2, grid_id * restrict label2, size_t npoints2, long int * pcounts, double *  bin_edges_sq, const int nbins, const double Lbox)
 {
   size_t i;
+  int Nj = pow(njack, 1.0/3.0)
   for(i=0;i<npoints1;i++)
     {
       const size_t simd_size = npoints2/SIMD_WIDTH;
@@ -34,6 +35,18 @@ void count_pairs_disjoint(FLOAT * x1, FLOAT * y1, FLOAT * z1, size_t npoints1, F
 	      for(n=nbins-1; n>=0; n--) {
 		if(dist_sq[k] > bin_edges_sq[n]) {
 		  pcounts[n]++;
+		  int a = label[i].x;
+		  int b = label[i].y;
+		  int c = label[i].z;
+		  int nsample = c + Nj*(b + Nj*a);
+		  for(int p=0;p<njack;p++){
+		  	if(p==nsample){
+		  		pcounts_jackknife[nsample*nbins + n]++;
+		  	} /* Bootstrap */
+		  	/*if(p=!nsample){
+		  		pcounts_jackknife[nsample*nbins + n]++;
+		  	}*/ /* Jackknife */
+		  }
 		  break;
 		}
 	      }
@@ -50,6 +63,18 @@ void count_pairs_disjoint(FLOAT * x1, FLOAT * y1, FLOAT * z1, size_t npoints1, F
 	    for(n=nbins-1; n>=0; n--) {
 	      if(dist_sq > bin_edges_sq[n]) {
 		pcounts[n]++;
+		int a = label[i].x;
+		int b = label[i].y;
+		int c = label[i].z;
+		int nsample = c + Nj*(b + Nj*a);
+		for(int p=0;p<njack;p++){
+			if(p==nsample){
+				pcounts_jackknife[nsample*nbins + n]++;
+		  	} /* Bootstrap */
+		  	/*if(p=!nsample){
+		  		pcounts_jackknife[nsample*nbins + n]++;
+		  	}*/ /* Jackknife */
+		  }
 		break;
 	      }
 	    }
@@ -60,7 +85,7 @@ void count_pairs_disjoint(FLOAT * x1, FLOAT * y1, FLOAT * z1, size_t npoints1, F
 
 void cross_count_pairs_naive(FLOAT * x1, FLOAT * y1, FLOAT * z1, size_t npoints1, FLOAT * x2, FLOAT * y2, FLOAT * z2, size_t npoints2, long int * pcounts, double *  bin_edges_sq, const int nbins, const double Lbox)
 {
-  count_pairs_disjoint(x1,y1,z1,npoints1,x2,y2,z2,npoints2,\
+  count_pairs_disjoint(x1,y1,z1,label1,npoints1,x2,y2,z2,label2,npoints2,\
 		       pcounts,bin_edges_sq,nbins,Lbox);
 }
 
@@ -90,12 +115,14 @@ void cross_count_pairs(GHash * restrict g1, GHash * restrict g2, long int * rest
 	FLOAT * restrict x1 = g1->x[INDEX(ix,iy,iz)];
 	FLOAT * restrict y1 = g1->y[INDEX(ix,iy,iz)];
 	FLOAT * restrict z1 = g1->z[INDEX(ix,iy,iz)];
-
+	grid_id * restrict label1 = g1->sample_excluded_from[INDEX(ix, iy, iz)];
+	
 	FLOAT * restrict x2 = g2->x[INDEX(ix,iy,iz)];
 	FLOAT * restrict y2 = g2->y[INDEX(ix,iy,iz)];
 	FLOAT * restrict z2 = g2->z[INDEX(ix,iy,iz)];
-
-	count_pairs_disjoint(x1,y1,z1,count1,x2,y2,z2,count2,\
+	grid_id * restrict label2 = g2->sample_excluded_from[INDEX(ix, iy, iz)];
+	
+	count_pairs_disjoint(x1,y1,z1,label1,count1,x2,y2,z2,label2,count2,\
 		       pcounts,bin_edges_sq,nbins,Lbox);
 	
 	int iix,iiy,iiz;
@@ -114,8 +141,9 @@ void cross_count_pairs(GHash * restrict g1, GHash * restrict g2, long int * rest
 	      FLOAT * restrict adj_x = g2->x[INDEX(aix,aiy,aiz)];
 	      FLOAT * restrict adj_y = g2->y[INDEX(aix,aiy,aiz)];
 	      FLOAT * restrict adj_z = g2->z[INDEX(aix,aiy,aiz)];
+	      grid_id * restrict adj_label = g2->sample_excluded_from[INDEX(ix, iy, iz)];
 
-	      count_pairs_disjoint(x1,y1,z1,count1,adj_x,adj_y,adj_z,adj_count,\
+	      count_pairs_disjoint(x1,y1,z1,label1,count1,adj_x,adj_y,adj_z,adj_label,adj_count,\
 				   pcounts,bin_edges_sq,nbins,Lbox);
 
 	    }
