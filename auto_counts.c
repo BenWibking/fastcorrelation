@@ -2,7 +2,7 @@
 
 #define SIMD_WIDTH 4
 
-void count_pairs_disjoint(FLOAT * restrict x, FLOAT * restrict y, FLOAT * restrict z, void * restrict label, FLOAT * restrict adj_x, FLOAT * restrict adj_y, FLOAT * restrict adj_z, void * restrict adj_label, size_t count, size_t adj_count, long int * pcounts, long int * pcounts_jackknife, double *  bin_edges_sq, const int nbins, const int njack, const double Lbox)
+void count_pairs_disjoint(FLOAT * restrict x, FLOAT * restrict y, FLOAT * restrict z, grid_id * restrict label, FLOAT * restrict adj_x, FLOAT * restrict adj_y, FLOAT * restrict adj_z, void * restrict adj_label, size_t count, size_t adj_count, long int * pcounts, long int * pcounts_jackknife, double *  bin_edges_sq, const int nbins, const int njack, const double Lbox)
 {
 	      /* // scalar version
 	      size_t i,j;
@@ -23,6 +23,7 @@ void count_pairs_disjoint(FLOAT * restrict x, FLOAT * restrict y, FLOAT * restri
 
   /* SIMD version */
   size_t i;
+  int Nj = pow(njack, 1.0/3.0);
   for(i=0;i<count;i++)
     {
       const size_t simd_size = adj_count/SIMD_WIDTH;
@@ -52,8 +53,17 @@ void count_pairs_disjoint(FLOAT * restrict x, FLOAT * restrict y, FLOAT * restri
 	      for(n=nbins-1; n>=0; n--) {
 		if(dist_sq[k] > bin_edges_sq[n]) {
 		  pcounts[n]++;
+		  int a = label[i].x;
+		  int b = label[i].y;
+		  int c = label[i].z;
+		  int nsample = c + Nj*(b + Nj*a);
 		  for(int p=0;p<njack;p++) {
-		    pcounts_jackknife[p*nbins + n]++; /* add to every histogram */
+		    if(p==nsample){ 
+		      pcounts_jackknife[nsample*nbins + n]++; 
+		      } /*Bootstrap*/
+		    /*if(p=!nsample){
+		      pcounts_jackknife[nsample*nbins + n]++;
+		      }*/ /*Jackknife*/
 		  }
 		  break;
 		}
@@ -71,8 +81,17 @@ void count_pairs_disjoint(FLOAT * restrict x, FLOAT * restrict y, FLOAT * restri
 	    for(n=nbins-1; n>=0; n--) {
 	      if(dist_sq > bin_edges_sq[n]) {
 		pcounts[n]++;
+		int a = label[i].x;
+		int b = label[i].y;
+		int c = label[i].z;
+		int nsample = c + Nj*(b + Nj*a);
 		for(int p=0;p<njack;p++) {
-		  pcounts_jackknife[p*nbins + n]++; /* add to every histogram */
+		  if(p==nsample){
+		    pcounts_jackknife[nsample*nbins + n]++; 
+		  } /*Bootstrap*/
+		  /*if(p=!nsample){
+		      pcounts_jackknife[nsample*nbins + n]++;
+		      }*/ /*Jackknife*/
 		}
 		break;
 	      }
@@ -83,7 +102,7 @@ void count_pairs_disjoint(FLOAT * restrict x, FLOAT * restrict y, FLOAT * restri
 }
 
 
-void count_pairs_self(FLOAT * restrict x, FLOAT * restrict y, FLOAT * restrict z, void * restrict label, size_t npoints, long int * pcounts, long int * pcounts_jackknife, double *  bin_edges_sq, const int nbins, const int njack, const double Lbox)
+void count_pairs_self(FLOAT * restrict x, FLOAT * restrict y, FLOAT * restrict z, grid_id * restrict label, size_t npoints, long int * pcounts, long int * pcounts_jackknife, double *  bin_edges_sq, const int nbins, const int njack, const double Lbox)
 {
   /* // scalar version
      size_t i,j;
@@ -109,6 +128,7 @@ void count_pairs_self(FLOAT * restrict x, FLOAT * restrict y, FLOAT * restrict z
 
   /* SIMD version */
   size_t i;
+  int Nj = pow(njack, 1.0/3.0);
   for(i=0;i<npoints;i++)
     {
       const size_t simd_size = npoints/SIMD_WIDTH;
@@ -135,8 +155,17 @@ void count_pairs_self(FLOAT * restrict x, FLOAT * restrict y, FLOAT * restrict z
 	      for(n=nbins-1; n>=0; n--) {
 		if(dist_sq[k] > bin_edges_sq[n]) {
 		  pcounts[n]++;
+		  int a = label[i].x;
+		  int b = label[i].y;
+		  int c = label[i].z;
+		  int nsample = c + Nj*(b + Nj*a);
 		  for(int p=0;p<njack;p++) {
-		    pcounts_jackknife[p*nbins + n]++; /* add to every histogram */
+		    if(p==nsample){
+		  	pcounts_jackknife[p*nbins + n]++;
+		    } /*Bootstrap*/
+		    /*if(p=!nsample){
+		        pcounts_jackknife[nsample*nbins + n]++;
+			}*/ /*Jackknife*/
 		  }
 		  break;
 		}
@@ -154,8 +183,17 @@ void count_pairs_self(FLOAT * restrict x, FLOAT * restrict y, FLOAT * restrict z
 	    for(n=nbins-1; n>=0; n--) {
 	      if(dist_sq > bin_edges_sq[n]) {
 		pcounts[n]++;
+		int a = label[i].x;
+		int b = label[i].y;
+		int c = label[i].z;
+		int nsample = c + Nj*(b + Nj*a);
 		for(int p=0;p<njack;p++) {
-		  pcounts_jackknife[p*nbins + n]++; /* add to every histogram */
+		  if(p==nsample){
+		  	pcounts_jackknife[p*nbins + n]++;
+		  } /*Bootstrap*/
+		  /*if(p=!nsample){
+		        pcounts_jackknife[nsample*nbins + n]++;
+		  }*/ /*Jackknife*/
 		}
 		break;
 	      }
@@ -165,7 +203,7 @@ void count_pairs_self(FLOAT * restrict x, FLOAT * restrict y, FLOAT * restrict z
     }
 }
 
-void count_pairs_naive(FLOAT * x, FLOAT * y, FLOAT * z, void * label, size_t npoints, long int * pcounts, long int * pcounts_jackknife, double *  bin_edges_sq, const int nbins, const int njack, const double Lbox)
+void count_pairs_naive(FLOAT * x, FLOAT * y, FLOAT * z, grid_id * label, size_t npoints, long int * pcounts, long int * pcounts_jackknife, double *  bin_edges_sq, const int nbins, const int njack, const double Lbox)
 {
   count_pairs_self(x,y,z,label,npoints,pcounts,pcounts_jackknife,bin_edges_sq,nbins,njack,Lbox);
 
@@ -198,7 +236,7 @@ void count_pairs(GHash * restrict g, long int * restrict pcounts, long int * res
 	FLOAT * restrict x = g->x[INDEX(ix,iy,iz)];
 	FLOAT * restrict y = g->y[INDEX(ix,iy,iz)];
 	FLOAT * restrict z = g->z[INDEX(ix,iy,iz)];
-	void * restrict label = g->sample_excluded_from[INDEX(ix,iy,iz)];
+	grid_id * restrict label = g->sample_excluded_from[INDEX(ix,iy,iz)];
 
 	count_pairs_self(x,y,z,label,count,pcounts,pcounts_jackknife,bin_edges_sq,nbins,njack,Lbox);
 	
@@ -223,7 +261,7 @@ void count_pairs(GHash * restrict g, long int * restrict pcounts, long int * res
 	      FLOAT * restrict adj_z = g->z[INDEX(aix,aiy,aiz)];
 	      void * restrict adj_label = g->sample_excluded_from[INDEX(ix,iy,iz)];
 
-	      count_pairs_disjoint(x,y,z,label,adj_x,adj_y,adj_z,label,	\
+	      count_pairs_disjoint(x,y,z,label,adj_x,adj_y,adj_z,adj_label,	\
 				   count,adj_count,pcounts,pcounts_jackknife,bin_edges_sq,nbins,njack,Lbox);
 
 	    }
@@ -245,4 +283,3 @@ void count_pairs(GHash * restrict g, long int * restrict pcounts, long int * res
   }
 
 }
-
