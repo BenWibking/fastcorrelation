@@ -2,7 +2,7 @@
 
 #define SIMD_WIDTH 4
 
-void count_pairs_disjoint(FLOAT * restrict x, FLOAT * restrict y, FLOAT * restrict z, grid_id * restrict label, FLOAT * restrict adj_x, FLOAT * restrict adj_y, FLOAT * restrict adj_z, void * restrict adj_label, size_t count, size_t adj_count, long int * pcounts, long int * pcounts_jackknife, double *  bin_edges_sq, const int nbins, const int njack, const double Lbox)
+void count_pairs_disjoint(FLOAT * restrict x, FLOAT * restrict y, FLOAT * restrict z, grid_id * restrict label, FLOAT * restrict adj_x, FLOAT * restrict adj_y, FLOAT * restrict adj_z, grid_id * restrict adj_label, size_t count, size_t adj_count, long int * pcounts, long int * pcounts_jackknife, double *  bin_edges_sq, const int nbins, const int njack, const double Lbox)
 {
 	      /* // scalar version
 	      size_t i,j;
@@ -58,12 +58,15 @@ void count_pairs_disjoint(FLOAT * restrict x, FLOAT * restrict y, FLOAT * restri
 		  int c = label[i].z;
 		  int nsample = c + Nj*(b + Nj*a);
 		  for(int p=0;p<njack;p++) {
-		    if(p==nsample){ 
+		    /*if(p==nsample){ 
 		      pcounts_jackknife[nsample*nbins + n]++; 
-		      } /*Bootstrap*/
-		    /*if(p=!nsample){
+		      }*/ /*Bootstrap*/
+		    if(p==nsample){
+		      continue;
+		      }
+		    else{
 		      pcounts_jackknife[nsample*nbins + n]++;
-		      }*/ /*Jackknife*/
+		    }/*Jackknife*/
 		  }
 		  break;
 		}
@@ -86,12 +89,15 @@ void count_pairs_disjoint(FLOAT * restrict x, FLOAT * restrict y, FLOAT * restri
 		int c = label[i].z;
 		int nsample = c + Nj*(b + Nj*a);
 		for(int p=0;p<njack;p++) {
-		  if(p==nsample){
+		  /* if(p==nsample){
 		    pcounts_jackknife[nsample*nbins + n]++; 
-		  } /*Bootstrap*/
-		  /*if(p=!nsample){
+		    }*/ /*Bootstrap*/
+		    if(p==nsample){
+		      continue;
+		      }
+		    else{
 		      pcounts_jackknife[nsample*nbins + n]++;
-		      }*/ /*Jackknife*/
+		    }/*Jackknife*/
 		}
 		break;
 	      }
@@ -160,12 +166,15 @@ void count_pairs_self(FLOAT * restrict x, FLOAT * restrict y, FLOAT * restrict z
 		  int c = label[i].z;
 		  int nsample = c + Nj*(b + Nj*a);
 		  for(int p=0;p<njack;p++) {
-		    if(p==nsample){
+		    /*if(p==nsample){
 		  	pcounts_jackknife[p*nbins + n]++;
-		    } /*Bootstrap*/
-		    /*if(p=!nsample){
-		        pcounts_jackknife[nsample*nbins + n]++;
-			}*/ /*Jackknife*/
+		    }*/ /*Bootstrap*/
+		    if(p==nsample){
+		      continue;
+		      }
+		    else{
+		      pcounts_jackknife[nsample*nbins + n]++;
+		    }/*Jackknife*/
 		  }
 		  break;
 		}
@@ -188,12 +197,15 @@ void count_pairs_self(FLOAT * restrict x, FLOAT * restrict y, FLOAT * restrict z
 		int c = label[i].z;
 		int nsample = c + Nj*(b + Nj*a);
 		for(int p=0;p<njack;p++) {
-		  if(p==nsample){
+		  /*if(p==nsample){
 		  	pcounts_jackknife[p*nbins + n]++;
-		  } /*Bootstrap*/
-		  /*if(p=!nsample){
-		        pcounts_jackknife[nsample*nbins + n]++;
-		  }*/ /*Jackknife*/
+		  }*/ /*Bootstrap*/
+		    if(p==nsample){
+		      continue;
+		      }
+		    else{
+		      pcounts_jackknife[nsample*nbins + n]++;
+		    }/*Jackknife*/
 		}
 		break;
 	      }

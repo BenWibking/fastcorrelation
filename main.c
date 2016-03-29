@@ -133,8 +133,8 @@ FILE *f = fopen("test.txt","w");
   for(i=0;i<nbins;i++) {
     double ndens = npoints/CUBE(Lbox);
     double exp_counts = (2./3.)*M_PI*(CUBE(bin_edges[i+1])-CUBE(bin_edges[i]))*ndens*npoints;
-    /*double exp_counts_jackknife = exp_counts*(double)(((double)njack-1.0)/(double)njack); */ /* Jackknife */
-    double exp_counts_jackknife = exp_counts*(double)(1.0/(double)njack); /* Bootstrap */
+    double exp_counts_jackknife = exp_counts*(double)(((double)njack-1.0)/(double)njack); /* Jackknife */
+    /*double exp_counts_jackknife = exp_counts*(double)(1.0/(double)njack);*/ /* Bootstrap */
     fprintf(f, "%lf  %lf  %ld  %lf", bin_edges[i],bin_edges[i+1],pcounts[i],(double)pcounts[i]/exp_counts - 1);
     /*printf("%lf\t%lf\t%ld\t%lf",bin_edges[i],bin_edges[i+1],pcounts[i],(double)pcounts[i]/exp_counts - 1);*/
     for(int j=0;j<njack;j++) {
@@ -143,13 +143,13 @@ FILE *f = fopen("test.txt","w");
       /*printf("\t%ld", pcounts_jackknife[j*nbins + i]);*/
     }
     /*printf("\n");*/
-    fprintf(f, "\n")
+    fprintf(f, "\n");
 #ifdef TEST_ALL_PAIRS
     printf("(naive) pair counts = %ld\n",pcounts_naive[i]);
 #endif
   }
 
-fclosef(f);
+fclose(f);
 
   /* free memory */
   my_free(pcounts);

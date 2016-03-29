@@ -109,10 +109,12 @@ int main(int argc, char *argv[])
   double *bin_edges_sq = my_malloc((nbins+1)*sizeof(double));
   double *bin_edges = my_malloc((nbins+1)*sizeof(double));
   long int *pcounts = my_malloc(nbins*sizeof(long int));
+  long int *pcounts_jackknife = my_malloc(nbins*sizeof(long int));
   long int *pcounts_naive = my_malloc(nbins*sizeof(long int));
   int i;
   for(i=0;i<nbins;i++) {
     pcounts[i] = (long int) 0;
+    pcounts_jackknife[i] = (long int) 0;
     pcounts_naive[i] = (long int) 0;
   }
   double dlogr = (log10(maxr)-log10(minr))/(double)nbins;
@@ -122,7 +124,7 @@ int main(int argc, char *argv[])
     bin_edges_sq[i] = SQ(bin_edge);
   }
 
-  cross_count_pairs(grid1, grid2, pcounts, bin_edges_sq, nbins);
+  cross_count_pairs(grid1, grid2, pcounts, pcounts_jackknife, bin_edges_sq, nbins);
 
 #ifdef TEST_ALL_PAIRS
   cross_count_pairs_naive(x1,y1,z1,npoints1, x2,y2,z2,npoints2, pcounts_naive, bin_edges_sq, nbins, Lbox);
@@ -145,13 +147,13 @@ FILE *f = fopen("test.txt","w");
       /*printf("\t%ld", pcounts_jackknife[j*nbins + i]);*/
     }
     /*printf("\n");*/
-    fprintf(f, "\n")
+    fprintf(f, "\n");
 #ifdef TEST_ALL_PAIRS
     printf("(naive) pair counts between (%lf, %lf] = %ld\n",bin_edges[i],bin_edges[i+1],pcounts_naive[i]);
 #endif
   }
 
-fclosef(f);
+fclose(f);
 
   my_free(pcounts);
   my_free(bin_edges);
