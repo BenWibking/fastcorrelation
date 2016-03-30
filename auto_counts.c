@@ -2,7 +2,7 @@
 
 #define SIMD_WIDTH 4
 
-void count_pairs_disjoint(FLOAT * restrict x, FLOAT * restrict y, FLOAT * restrict z, grid_id * restrict label, FLOAT * restrict adj_x, FLOAT * restrict adj_y, FLOAT * restrict adj_z, void * restrict adj_label, size_t count, size_t adj_count, long int * pcounts, long int * pcounts_jackknife, double *  bin_edges_sq, const int nbins, const int njack, const double Lbox)
+void count_pairs_disjoint(FLOAT * restrict x, FLOAT * restrict y, FLOAT * restrict z, grid_id * restrict label, FLOAT * restrict adj_x, FLOAT * restrict adj_y, FLOAT * restrict adj_z, void * restrict adj_label, size_t count, size_t adj_count, long int * pcounts, long int * pcounts_jackknife, double *  bin_edges_sq, const int nbins, const int nsubsamples, const double Lbox)
 {
 	      /* // scalar version
 	      size_t i,j;
@@ -23,7 +23,7 @@ void count_pairs_disjoint(FLOAT * restrict x, FLOAT * restrict y, FLOAT * restri
 
   /* SIMD version */
   size_t i;
-  int Nj = pow(njack, 1.0/3.0);
+  int nsubsamples_along_side = pow(nsubsamples, 1.0/3.0);
   for(i=0;i<count;i++)
     {
       const size_t simd_size = adj_count/SIMD_WIDTH;
@@ -56,8 +56,8 @@ void count_pairs_disjoint(FLOAT * restrict x, FLOAT * restrict y, FLOAT * restri
 		  int a = label[i].x;
 		  int b = label[i].y;
 		  int c = label[i].z;
-		  int nsample = c + Nj*(b + Nj*a);
-		  for(int p=0;p<njack;p++) {
+		  int nsample = c + nsubsamples_along_side*(b + nsubsamples_along_side*a);
+		  for(int p=0;p<nsubsamples;p++) {
 #ifdef JACKKNIFE_SUBSAMPLES
 		  	if(p=!nsample){
 		  		pcounts_jackknife[nsample*nbins + n]++;
@@ -87,8 +87,8 @@ void count_pairs_disjoint(FLOAT * restrict x, FLOAT * restrict y, FLOAT * restri
 		int a = label[i].x;
 		int b = label[i].y;
 		int c = label[i].z;
-		int nsample = c + Nj*(b + Nj*a);
-		for(int p=0;p<njack;p++) {
+		int nsample = c + nsubsamples_along_side*(b + nsubsamples_along_side*a);
+		for(int p=0;p<nsubsamples;p++) {
 #ifdef JACKKNIFE_SUBSAMPLES
 		  	if(p=!nsample){
 		  		pcounts_jackknife[nsample*nbins + n]++;
@@ -108,7 +108,7 @@ void count_pairs_disjoint(FLOAT * restrict x, FLOAT * restrict y, FLOAT * restri
 }
 
 
-void count_pairs_self(FLOAT * restrict x, FLOAT * restrict y, FLOAT * restrict z, grid_id * restrict label, size_t npoints, long int * pcounts, long int * pcounts_jackknife, double *  bin_edges_sq, const int nbins, const int njack, const double Lbox)
+void count_pairs_self(FLOAT * restrict x, FLOAT * restrict y, FLOAT * restrict z, grid_id * restrict label, size_t npoints, long int * pcounts, long int * pcounts_jackknife, double *  bin_edges_sq, const int nbins, const int nsubsamples, const double Lbox)
 {
   /* // scalar version
      size_t i,j;
@@ -134,7 +134,7 @@ void count_pairs_self(FLOAT * restrict x, FLOAT * restrict y, FLOAT * restrict z
 
   /* SIMD version */
   size_t i;
-  int Nj = pow(njack, 1.0/3.0);
+  int nsubsamples_along_side = pow(nsubsamples, 1.0/3.0);
   for(i=0;i<npoints;i++)
     {
       const size_t simd_size = npoints/SIMD_WIDTH;
@@ -164,8 +164,8 @@ void count_pairs_self(FLOAT * restrict x, FLOAT * restrict y, FLOAT * restrict z
 		  int a = label[i].x;
 		  int b = label[i].y;
 		  int c = label[i].z;
-		  int nsample = c + Nj*(b + Nj*a);
-		  for(int p=0;p<njack;p++) {
+		  int nsample = c + nsubsamples_along_side*(b + nsubsamples_along_side*a);
+		  for(int p=0;p<nsubsamples;p++) {
 #ifdef JACKKNIFE_SUBSAMPLES
 		  	if(p=!nsample){
 		  		pcounts_jackknife[nsample*nbins + n]++;
@@ -195,8 +195,8 @@ void count_pairs_self(FLOAT * restrict x, FLOAT * restrict y, FLOAT * restrict z
 		int a = label[i].x;
 		int b = label[i].y;
 		int c = label[i].z;
-		int nsample = c + Nj*(b + Nj*a);
-		for(int p=0;p<njack;p++) {
+		int nsample = c + nsubsamples_along_side*(b + nsubsamples_along_side*a);
+		for(int p=0;p<nsubsamples;p++) {
 #ifdef JACKKNIFE_SUBSAMPLES
 		  	if(p=!nsample){
 		  		pcounts_jackknife[nsample*nbins + n]++;
@@ -215,15 +215,15 @@ void count_pairs_self(FLOAT * restrict x, FLOAT * restrict y, FLOAT * restrict z
     }
 }
 
-void count_pairs_naive(FLOAT * x, FLOAT * y, FLOAT * z, grid_id * label, size_t npoints, long int * pcounts, long int * pcounts_jackknife, double *  bin_edges_sq, const int nbins, const int njack, const double Lbox)
+void count_pairs_naive(FLOAT * x, FLOAT * y, FLOAT * z, grid_id * label, size_t npoints, long int * pcounts, long int * pcounts_jackknife, double *  bin_edges_sq, const int nbins, const int nsubsamples, const double Lbox)
 {
-  count_pairs_self(x,y,z,label,npoints,pcounts,pcounts_jackknife,bin_edges_sq,nbins,njack,Lbox);
+  count_pairs_self(x,y,z,label,npoints,pcounts,pcounts_jackknife,bin_edges_sq,nbins,nsubsamples,Lbox);
 
   for(int i=0;i<nbins;i++) {
     pcounts[i] = pcounts[i]/2;
   }
 
-  for(int j=0;j<njack;j++) {
+  for(int j=0;j<nsubsamples;j++) {
     for(int i=0;i<nbins;i++) {
       pcounts_jackknife[j*nbins + i] = pcounts_jackknife[j*nbins + i]/2;
     }
@@ -234,7 +234,7 @@ void count_pairs_naive(FLOAT * x, FLOAT * y, FLOAT * z, grid_id * label, size_t 
 void count_pairs(GHash * restrict g, long int * restrict pcounts, long int * restrict pcounts_jackknife, double * restrict bin_edges_sq, int nbins)
 {
   int ngrid = g->ngrid;
-  int njack = CUBE(g->njack);
+  int nsubsamples = CUBE(g->njack);
   double Lbox = g->Lbox;
   int ix,iy,iz;
   for(ix=0;ix<ngrid;ix++) {
@@ -250,7 +250,7 @@ void count_pairs(GHash * restrict g, long int * restrict pcounts, long int * res
 	FLOAT * restrict z = g->z[INDEX(ix,iy,iz)];
 	grid_id * restrict label = g->sample_excluded_from[INDEX(ix,iy,iz)];
 
-	count_pairs_self(x,y,z,label,count,pcounts,pcounts_jackknife,bin_edges_sq,nbins,njack,Lbox);
+	count_pairs_self(x,y,z,label,count,pcounts,pcounts_jackknife,bin_edges_sq,nbins,nsubsamples,Lbox);
 	
 	int iix,iiy,iiz;
 	for(iix=-1;iix<=1;iix++) {
@@ -274,7 +274,7 @@ void count_pairs(GHash * restrict g, long int * restrict pcounts, long int * res
 	      void * restrict adj_label = g->sample_excluded_from[INDEX(ix,iy,iz)];
 
 	      count_pairs_disjoint(x,y,z,label,adj_x,adj_y,adj_z,adj_label,	\
-				   count,adj_count,pcounts,pcounts_jackknife,bin_edges_sq,nbins,njack,Lbox);
+				   count,adj_count,pcounts,pcounts_jackknife,bin_edges_sq,nbins,nsubsamples,Lbox);
 
 	    }
 	  }
@@ -288,7 +288,7 @@ void count_pairs(GHash * restrict g, long int * restrict pcounts, long int * res
     pcounts[i] = pcounts[i]/2;
   }
 
-  for(int j=0;j<njack;j++) {
+  for(int j=0;j<nsubsamples;j++) {
     for(int i=0;i<nbins;i++) {
       pcounts_jackknife[j*nbins + i] = pcounts_jackknife[j*nbins + i]/2;
     }
