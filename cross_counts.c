@@ -1,95 +1,12 @@
 #include "hash.h"
 
-#define SIMD_WIDTH 4
-
-void count_pairs_disjoint(FLOAT * x1, FLOAT * y1, FLOAT * z1, grid_id * restrict label1, size_t npoints1, FLOAT * x2, FLOAT * y2, FLOAT * z2, grid_id * restrict label2, size_t npoints2, long int * pcounts, double *  bin_edges_sq, const int nbins, const double Lbox)
+void cross_count_pairs_naive(FLOAT * x1, FLOAT * y1, FLOAT * z1, grid_id * label1, size_t npoints1, FLOAT * x2, FLOAT * y2, FLOAT * z2, grid_id * label2, size_t npoints2, long int * pcounts, long int * pcounts_jackknife, double *  bin_edges_sq, const int nbins, const int njack, const double Lbox)
 {
-  size_t i;
-  int Nj = pow(njack, 1.0/3.0)
-  for(i=0;i<npoints1;i++)
-    {
-      const size_t simd_size = npoints2/SIMD_WIDTH;
-      size_t jj;
-      for(jj=0;jj<simd_size;jj++)
-	{
-          double dist_sq[SIMD_WIDTH];
-	  size_t k;
-#ifdef __INTEL_COMPILER
-	  __assume_aligned(x1, 32);
-	  __assume_aligned(y1, 32);
-	  __assume_aligned(z1, 32);
-	  __assume_aligned(x2, 32);
-	  __assume_aligned(y2, 32);
-	  __assume_aligned(z2, 32);
-#endif
-	  //#pragma simd
-	  for(k=0;k<SIMD_WIDTH;k++)
-	    {
-	      const size_t kk = k+jj*SIMD_WIDTH;
-	      dist_sq[k] = SQ(PERIODIC(x1[i]-x2[kk])) + SQ(PERIODIC(y1[i]-y2[kk])) + SQ(PERIODIC(z1[i]-z2[kk]));
-	    }
-
-	  for(k=0;k<SIMD_WIDTH;k++) {
-	    if(!(dist_sq[k] > bin_edges_sq[nbins])) {
-	      int n;
-	      for(n=nbins-1; n>=0; n--) {
-		if(dist_sq[k] > bin_edges_sq[n]) {
-		  pcounts[n]++;
-		  int a = label[i].x;
-		  int b = label[i].y;
-		  int c = label[i].z;
-		  int nsample = c + Nj*(b + Nj*a);
-		  for(int p=0;p<njack;p++){
-		  	if(p==nsample){
-		  		pcounts_jackknife[nsample*nbins + n]++;
-		  	} /* Bootstrap */
-		  	/*if(p=!nsample){
-		  		pcounts_jackknife[nsample*nbins + n]++;
-		  	}*/ /* Jackknife */
-		  }
-		  break;
-		}
-	      }
-	    }
-	  }
-	}
-
-      size_t k;
-      for(k=((simd_size)*SIMD_WIDTH);k<npoints2;k++)
-	{
-	  double dist_sq = SQ(PERIODIC(x1[i]-x2[k])) + SQ(PERIODIC(y1[i]-y2[k])) + SQ(PERIODIC(z1[i]-z2[k]));
-	  if(!(dist_sq > bin_edges_sq[nbins])) {
-	    int n;
-	    for(n=nbins-1; n>=0; n--) {
-	      if(dist_sq > bin_edges_sq[n]) {
-		pcounts[n]++;
-		int a = label[i].x;
-		int b = label[i].y;
-		int c = label[i].z;
-		int nsample = c + Nj*(b + Nj*a);
-		for(int p=0;p<njack;p++){
-			if(p==nsample){
-				pcounts_jackknife[nsample*nbins + n]++;
-		  	} /* Bootstrap */
-		  	/*if(p=!nsample){
-		  		pcounts_jackknife[nsample*nbins + n]++;
-		  	}*/ /* Jackknife */
-		  }
-		break;
-	      }
-	    }
-	  }
-	}
-    }
+  count_pairs_disjoint(x1,y1,z1,label1,x2,y2,z2,label2,npoints1,npoints2, \
+		       pcounts,pcounts_jackknife,bin_edges_sq,nbins,njack,Lbox);
 }
 
-void cross_count_pairs_naive(FLOAT * x1, FLOAT * y1, FLOAT * z1, size_t npoints1, FLOAT * x2, FLOAT * y2, FLOAT * z2, size_t npoints2, long int * pcounts, double *  bin_edges_sq, const int nbins, const double Lbox)
-{
-  count_pairs_disjoint(x1,y1,z1,label1,npoints1,x2,y2,z2,label2,npoints2,\
-		       pcounts,bin_edges_sq,nbins,Lbox);
-}
-
-void cross_count_pairs(GHash * restrict g1, GHash * restrict g2, long int * restrict pcounts, double * restrict bin_edges_sq, int nbins)
+void cross_count_pairs(GHash * restrict g1, GHash * restrict g2, long int * restrict pcounts, long int * restrict pcounts_jackknife, double * restrict bin_edges_sq, int nbins, int njack)
 {
   /* check that g1 and g2 have the same ngrid and Lbox */
   if(g1->ngrid != g2->ngrid) {
@@ -122,8 +39,8 @@ void cross_count_pairs(GHash * restrict g1, GHash * restrict g2, long int * rest
 	FLOAT * restrict z2 = g2->z[INDEX(ix,iy,iz)];
 	grid_id * restrict label2 = g2->sample_excluded_from[INDEX(ix, iy, iz)];
 	
-	count_pairs_disjoint(x1,y1,z1,label1,count1,x2,y2,z2,label2,count2,\
-		       pcounts,bin_edges_sq,nbins,Lbox);
+	count_pairs_disjoint(x1,y1,z1,label1,x2,y2,z2,label2,count1,count2, \
+			     pcounts,pcounts_jackknife,bin_edges_sq,nbins,njack,Lbox);
 	
 	int iix,iiy,iiz;
 	for(iix=-1;iix<=1;iix++) {
@@ -143,8 +60,8 @@ void cross_count_pairs(GHash * restrict g1, GHash * restrict g2, long int * rest
 	      FLOAT * restrict adj_z = g2->z[INDEX(aix,aiy,aiz)];
 	      grid_id * restrict adj_label = g2->sample_excluded_from[INDEX(ix, iy, iz)];
 
-	      count_pairs_disjoint(x1,y1,z1,label1,count1,adj_x,adj_y,adj_z,adj_label,adj_count,\
-				   pcounts,bin_edges_sq,nbins,Lbox);
+	      count_pairs_disjoint(x1,y1,z1,label1,adj_x,adj_y,adj_z,adj_label,count1,adj_count, \
+				   pcounts,pcounts_jackknife,bin_edges_sq,nbins,njack,Lbox);
 
 	    }
 	  }

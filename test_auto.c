@@ -130,10 +130,10 @@ int main(int argc, char *argv[])
   for(int i=0;i<nbins;i++) {
     double ndens = npoints/CUBE(Lbox);
     double exp_counts = (2./3.)*M_PI*(CUBE(bin_edges[i+1])-CUBE(bin_edges[i]))*ndens*npoints;
-    double exp_counts_jackknife = exp_counts*(double)((njack-1)/njack);
-    printf("%lf\t%lf\t%ld\t%lf",bin_edges[i],bin_edges[i+1],pcounts[i],(double)pcounts[i]/exp_counts);
+    double exp_counts_jackknife = exp_counts*(double)((1.0)/(double)njack);
+    printf("%lf\t%lf\t%ld\t%lf",bin_edges[i],bin_edges[i+1],pcounts[i],(double)pcounts[i]/exp_counts - 1.0);
     for(int j=0;j<njack;j++) {
-      printf("\t%lf",(double)pcounts_jackknife[j*nbins + i]);
+      printf("\t%lf",(double)pcounts_jackknife[j*nbins + i]/exp_counts_jackknife - 1.0);
       //      printf("\t%lf",(double)pcounts_jackknife_naive[j*nbins + i]);
     }
     printf("\n");

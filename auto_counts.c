@@ -58,12 +58,15 @@ void count_pairs_disjoint(FLOAT * restrict x, FLOAT * restrict y, FLOAT * restri
 		  int c = label[i].z;
 		  int nsample = c + Nj*(b + Nj*a);
 		  for(int p=0;p<njack;p++) {
-		    if(p==nsample){ 
-		      pcounts_jackknife[nsample*nbins + n]++; 
-		      } /*Bootstrap*/
-		    /*if(p=!nsample){
-		      pcounts_jackknife[nsample*nbins + n]++;
-		      }*/ /*Jackknife*/
+#ifdef JACKKNIFE_SUBSAMPLES
+		  	if(p=!nsample){
+		  		pcounts_jackknife[nsample*nbins + n]++;
+		  	} /* Jackknife */
+#else
+		  	if(p==nsample){
+		  		pcounts_jackknife[nsample*nbins + n]++;
+		  	} /* Bootstrap */
+#endif
 		  }
 		  break;
 		}
@@ -86,12 +89,15 @@ void count_pairs_disjoint(FLOAT * restrict x, FLOAT * restrict y, FLOAT * restri
 		int c = label[i].z;
 		int nsample = c + Nj*(b + Nj*a);
 		for(int p=0;p<njack;p++) {
-		  if(p==nsample){
-		    pcounts_jackknife[nsample*nbins + n]++; 
-		  } /*Bootstrap*/
-		  /*if(p=!nsample){
-		      pcounts_jackknife[nsample*nbins + n]++;
-		      }*/ /*Jackknife*/
+#ifdef JACKKNIFE_SUBSAMPLES
+		  	if(p=!nsample){
+		  		pcounts_jackknife[nsample*nbins + n]++;
+		  	} /* Jackknife */
+#else
+		  	if(p==nsample){
+		  		pcounts_jackknife[nsample*nbins + n]++;
+		  	} /* Bootstrap */
+#endif
 		}
 		break;
 	      }
@@ -160,12 +166,15 @@ void count_pairs_self(FLOAT * restrict x, FLOAT * restrict y, FLOAT * restrict z
 		  int c = label[i].z;
 		  int nsample = c + Nj*(b + Nj*a);
 		  for(int p=0;p<njack;p++) {
-		    if(p==nsample){
-		  	pcounts_jackknife[p*nbins + n]++;
-		    } /*Bootstrap*/
-		    /*if(p=!nsample){
-		        pcounts_jackknife[nsample*nbins + n]++;
-			}*/ /*Jackknife*/
+#ifdef JACKKNIFE_SUBSAMPLES
+		  	if(p=!nsample){
+		  		pcounts_jackknife[nsample*nbins + n]++;
+		  	} /* Jackknife */
+#else
+		  	if(p==nsample){
+		  		pcounts_jackknife[nsample*nbins + n]++;
+		  	} /* Bootstrap */
+#endif
 		  }
 		  break;
 		}
@@ -188,12 +197,15 @@ void count_pairs_self(FLOAT * restrict x, FLOAT * restrict y, FLOAT * restrict z
 		int c = label[i].z;
 		int nsample = c + Nj*(b + Nj*a);
 		for(int p=0;p<njack;p++) {
-		  if(p==nsample){
-		  	pcounts_jackknife[p*nbins + n]++;
-		  } /*Bootstrap*/
-		  /*if(p=!nsample){
-		        pcounts_jackknife[nsample*nbins + n]++;
-		  }*/ /*Jackknife*/
+#ifdef JACKKNIFE_SUBSAMPLES
+		  	if(p=!nsample){
+		  		pcounts_jackknife[nsample*nbins + n]++;
+		  	} /* Jackknife */
+#else
+		  	if(p==nsample){
+		  		pcounts_jackknife[nsample*nbins + n]++;
+		  	} /* Bootstrap */
+#endif
 		}
 		break;
 	      }
@@ -209,7 +221,7 @@ void count_pairs_naive(FLOAT * x, FLOAT * y, FLOAT * z, grid_id * label, size_t 
 
   for(int i=0;i<nbins;i++) {
     pcounts[i] = pcounts[i]/2;
-  }  /* also do this for pcounts_jackknife?? */
+  }
 
   for(int j=0;j<njack;j++) {
     for(int i=0;i<nbins;i++) {
@@ -274,7 +286,7 @@ void count_pairs(GHash * restrict g, long int * restrict pcounts, long int * res
   size_t i;
   for(i=0;i<nbins;i++) {
     pcounts[i] = pcounts[i]/2;
-  } /* also do this for pcounts_jackknife? */
+  }
 
   for(int j=0;j<njack;j++) {
     for(int i=0;i<nbins;i++) {

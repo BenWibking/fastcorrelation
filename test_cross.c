@@ -56,8 +56,9 @@ int main(int argc, char *argv[])
   }
 
   size_t npointsA,npointsB;
-  int ngrid, njack;
+  int ngrid, njack, nsamples_along_side;
   njack = input_njack;
+  nsamples_along_side = (int) pow((double)njack,1./3.);
   nbins = input_nbins;
   minr = input_rmin;
   maxr = input_rmax;
@@ -77,6 +78,10 @@ int main(int argc, char *argv[])
   FLOAT *y2 = (FLOAT*) my_malloc(npointsB*sizeof(FLOAT));
   FLOAT *z2 = (FLOAT*) my_malloc(npointsB*sizeof(FLOAT));
 
+  grid_id *label1, *label2;
+  label1 = my_malloc(npointsA*sizeof(grid_id));
+  label2 = my_malloc(npointsB*sizeof(grid_id));
+
   const gsl_rng_type * T;
   gsl_rng * r;
   gsl_rng_env_setup();
@@ -91,12 +96,28 @@ int main(int argc, char *argv[])
       x1[n] = gsl_rng_uniform(r)*Lbox;
       y1[n] = gsl_rng_uniform(r)*Lbox;
       z1[n] = gsl_rng_uniform(r)*Lbox;
+
+      /* fix variable naming convention - nsubsamples vs. nsubsamples_along_side */
+      int jx = (int)floor(x1[n]/Lbox*((double)nsamples_along_side)) % nsamples_along_side;
+      int jy = (int)floor(y1[n]/Lbox*((double)nsamples_along_side)) % nsamples_along_side;
+      int jz = (int)floor(z1[n]/Lbox*((double)nsamples_along_side)) % nsamples_along_side;
+      label1[n].x = jx;
+      label1[n].y = jy;
+      label1[n].z = jz;
     }
   for(n=0;n<npointsB;n++)
     {
       x2[n] = gsl_rng_uniform(r)*Lbox;
       y2[n] = gsl_rng_uniform(r)*Lbox;
       z2[n] = gsl_rng_uniform(r)*Lbox;
+
+      /* fix variable naming convention - nsubsamples vs. nsubsamples_along_side */
+      int jx = (int)floor(x2[n]/Lbox*((double)nsamples_along_side)) % nsamples_along_side;
+      int jy = (int)floor(y2[n]/Lbox*((double)nsamples_along_side)) % nsamples_along_side;
+      int jz = (int)floor(z2[n]/Lbox*((double)nsamples_along_side)) % nsamples_along_side;
+      label2[n].x = jx;
+      label2[n].y = jy;
+      label2[n].z = jz;
     }
 
   gsl_rng_free(r);
@@ -121,7 +142,9 @@ int main(int argc, char *argv[])
   double *bin_edges_sq = my_malloc((nbins+1)*sizeof(double));
   double *bin_edges = my_malloc((nbins+1)*sizeof(double));
   long int *pcounts = my_malloc(nbins*sizeof(long int));
+  long int *pcounts_jackknife = my_malloc(njack*nbins*sizeof(long int));
   long int *pcounts_naive = my_malloc(nbins*sizeof(long int));
+  long int *pcounts_jackknife_naive = my_malloc(njack*nbins*sizeof(long int));
   int i;
   for(i=0;i<nbins;i++) {
     pcounts[i] = (long int) 0;
@@ -134,16 +157,23 @@ int main(int argc, char *argv[])
     bin_edges_sq[i] = SQ(bin_edge);
   }
 
-  cross_count_pairs(grid1, grid2, pcounts, bin_edges_sq, nbins);
+  cross_count_pairs(grid1, grid2, pcounts, pcounts_jackknife, bin_edges_sq, nbins, njack);
 
-  cross_count_pairs_naive(x1,y1,z1,npointsA, x2,y2,z2,npointsB, pcounts_naive, bin_edges_sq, nbins, Lbox);
+  cross_count_pairs_naive(x1,y1,z1,label1,npointsA,\
+			  x2,y2,z2,label2,npointsB,\
+			  pcounts_naive,pcounts_jackknife,bin_edges_sq, nbins, njack, Lbox);
 
   /* output pair counts */
   printf("min_bin\tmax_bin\tbin_counts\tnatural_estimator\n");
   for(i=0;i<nbins;i++) {
     double ndensA = npointsA/CUBE(Lbox);
     double exp_counts = (4./3.)*M_PI*(CUBE(bin_edges[i+1])-CUBE(bin_edges[i]))*ndensA*npointsB;
-    printf("%lf\t%lf\t%ld\t%lf\n",bin_edges[i],bin_edges[i+1],pcounts[i],(double)pcounts[i]/exp_counts);
+    double exp_counts_jackknife = exp_counts*((double)1.0/(double)njack); /* bootstrap */
+    printf("%lf\t%lf\t%ld\t%lf",bin_edges[i],bin_edges[i+1],pcounts[i],(double)pcounts[i]/exp_counts - 1.0);
+    for(int j=0;j<njack;j++) {
+      printf("\t%lf",(double)pcounts_jackknife[j*nbins + i]/exp_counts_jackknife - 1.0);
+    }
+    printf("\n");
 
     printf("(naive) pair counts between (%lf, %lf] = %ld\n",bin_edges[i],bin_edges[i+1],pcounts_naive[i]);
   }

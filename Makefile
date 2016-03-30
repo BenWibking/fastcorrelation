@@ -7,8 +7,8 @@ LIB=-L $(HOME)/lib -lgsl -lgslcblas $(HDF5_C_LIBS)
 
 OBJS_AUTO=hash.o auto_counts.o read_hdf5.o main.o
 OBJS_TEST_AUTO=hash.o auto_counts.o read_hdf5.o test_auto.o
-OBJS_CROSS=hash.o cross_counts.o read_hdf5.o main_cross.o
-OBJS_TEST_CROSS=hash.o cross_counts.o read_hdf5.o test_cross.o
+OBJS_CROSS=hash.o auto_counts.o cross_counts.o read_hdf5.o main_cross.o
+OBJS_TEST_CROSS=hash.o auto_counts.o cross_counts.o read_hdf5.o test_cross.o
 EXEC_AUTO = auto
 EXEC_CROSS = cross
 EXEC_TEST_AUTO = test_auto
