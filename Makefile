@@ -16,6 +16,10 @@ EXEC_TEST_CROSS = test_cross
 
 default: auto cross test_auto test_cross
 
+test: $(EXEC_AUTO)
+	$(EXEC_AUTO) --test-pairs 30 0.1 30 720 1 galaxy_mock.hdf5 
+	$(EXEC_AUTO) --test-pairs 30 0.1 30 720 1 DM_subsample.hdf5
+
 clean:
 	rm *.o; rm $(EXEC_AUTO) $(EXEC_CROSS) $(EXEC_TEST_AUTO) $(EXEC_TEST_CROSS)
 
