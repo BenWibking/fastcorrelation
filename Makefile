@@ -2,8 +2,10 @@
 #CFLAGS=-g -Wall -std=c99 -O0
 CC=icc
 CFLAGS=-O3 -Wall -march=native -std=c99
+#HDF5_C_INCLUDE=/usr/include
+#HDF5_C_LIBS=/usr/lib64 -lhdf5
 INCLUDE=-I $(HOME)/include $(HDF5_C_INCLUDE) $(MPI_CFLAGS)
-LIB=-L $(HOME)/lib -lgsl -lgslcblas $(HDF5_C_LIBS)
+LIB=-L $(HOME)/lib $(HDF5_C_LIBS) -lgsl -lgslcblas 
 
 OBJS_AUTO=hash.o auto_counts.o read_hdf5.o main.o
 OBJS_TEST_AUTO=hash.o auto_counts.o read_hdf5.o test_auto.o
@@ -17,8 +19,8 @@ EXEC_TEST_CROSS = test_cross
 default: auto cross test_auto test_cross
 
 test: $(EXEC_AUTO)
-	$(EXEC_AUTO) --test-pairs 30 0.1 30 720 1 galaxy_mock.hdf5 
-	$(EXEC_AUTO) --test-pairs 30 0.1 30 720 1 DM_subsample.hdf5
+	./$(EXEC_AUTO) --test-pairs 30 0.1 30 720 1 galaxy_mock.hdf5 
+	./$(EXEC_AUTO) --test-pairs 30 0.1 30 720 1 DM_subsample.hdf5
 
 clean:
 	rm *.o; rm $(EXEC_AUTO) $(EXEC_CROSS) $(EXEC_TEST_AUTO) $(EXEC_TEST_CROSS)
