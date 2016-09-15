@@ -1,1 +1,2 @@
+* add tests (compare for correctness with naive algorithm)
 * add openmp threading

@@ -8,56 +8,67 @@ int main(int argc, char *argv[])
   int input_nbins;
   float input_boxsize, input_rmin, input_rmax, input_njackknife;
   char *filename;
+  bool do_test_pairs = false; /* if true, do N^2 pair counts for debugging */
 
   /* check inputs */
-  if(argc != 7) {
-    printf("./auto nbins rmin rmax box_size njackknife_samples filename\n");
+  if(argc != 7 && argc != 8) {
+    printf("./auto [--test-pairs] nbins rmin rmax box_size njackknife_samples filename\n");
     exit(-1);
   }
 
-  input_nbins = atoi(argv[1]);
-  input_rmin = atof(argv[2]);
-  input_rmax = atof(argv[3]);
-  input_boxsize = atof(argv[4]);
-  input_njackknife = atoi(argv[5]);
+  int countargs = 1;
+  if(argc == 8) {
+    if(strcmp("--test-pairs",argv[countargs])==0) {
+      fprintf(stderr,"***RUNNING CORRECTNESS TESTS (THIS IS EXPENSIVE)***\n");
+      do_test_pairs = true;
+    }
+    countargs++;
+  }
 
-  filename = malloc(sizeof(char)*(strlen(argv[6])+1));
+  input_nbins = atoi(argv[countargs]); countargs++;
+  input_rmin = atof(argv[countargs]); countargs++;
+  input_rmax = atof(argv[countargs]); countargs++;
+  input_boxsize = atof(argv[countargs]); countargs++;
+  input_njackknife = atoi(argv[countargs]); countargs++;
+
+  filename = malloc(sizeof(char)*(strlen(argv[countargs])+1));
   if(filename) { /* filename is not null */
-    sprintf(filename,"%s",argv[6]);
+    sprintf(filename,"%s",argv[countargs]);
   } else {
-    printf("malloc failure! cannot allocate filename array\n");
+    fprintf(stderr,"malloc failure! cannot allocate filename array\n");
     exit(-1);
   }
 
   if(input_nbins <= 0) {
-    printf("ngrid must be positive!\n");
+    fprintf(stderr,"ngrid must be positive!\n");
     exit(-1);
   }
   if(input_rmin <= 0.) {
-    printf("rmin must be positive!\n");
+    fprintf(stderr,"rmin must be positive!\n");
     exit(-1);
   }
   if(!(input_rmax > input_rmin)) {
-    printf("rmax must be greater than rmin!\n");
+    fprintf(stderr,"rmax must be greater than rmin!\n");
     exit(-1);
   }
   if(input_boxsize <= 0.) {
-    printf("boxsize must be positive!\n");
+    fprintf(stderr,"boxsize must be positive!\n");
     exit(-1);
   }
   if(input_njackknife < 0) {
-    printf("njackknife_samples must be nonnegative!\n");
+    fprintf(stderr,"njackknife_samples must be nonnegative!\n");
     exit(-1);
   }
   if(pow(floor(pow((float)input_njackknife, 1./3.)), 3) != input_njackknife) {
-    printf("njackknife_samples must be a perfect cube!\n");
+    fprintf(stderr,"njackknife_samples must be a perfect cube!\n");
     exit(-1);
   }
 
   size_t npoints;
-  int ngrid, njack;
+  int ngrid, njack, nsubsamples_along_side;
   nbins = input_nbins;
   njack = input_njackknife;
+  nsubsamples_along_side = pow((double)njack, 1./3.);
   minr = input_rmin;
   maxr = input_rmax;
   Lbox = (double)input_boxsize;
@@ -72,42 +83,56 @@ int main(int argc, char *argv[])
   FLOAT *y = (FLOAT*) my_malloc(npoints*sizeof(FLOAT));
   FLOAT *z = (FLOAT*) my_malloc(npoints*sizeof(FLOAT));
 
+  grid_id *label;
   size_t n;
   for(n=0;n<npoints;n++)
     {
       x[n] = points[n].x;
       y[n] = points[n].y;
-      z[n] = points[n].z;
+      z[n] = points[n].z;      
     }
 
-  free(points);
+  if(do_test_pairs) {
+    label = my_malloc(npoints*sizeof(grid_id));
+    for(n=0;n<npoints;n++)
+      {
+	int jx = (int)floor(x[n]/Lbox*((double)nsubsamples_along_side)) % nsubsamples_along_side;
+	int jy = (int)floor(y[n]/Lbox*((double)nsubsamples_along_side)) % nsubsamples_along_side;
+	int jz = (int)floor(z[n]/Lbox*((double)nsubsamples_along_side)) % nsubsamples_along_side;
+	label[n].x = jx;
+	label[n].y = jy;
+	label[n].z = jz;
+      }
+  }
+
+  if(!do_test_pairs) {
+    free(points);
+  }
 
   /* hash into grid cells */
   GHash *grid = allocate_hash(ngrid, njack, Lbox, npoints, x, y, z);
   if ((int)grid == 0) {
-    printf("allocating grid failed!\n");
+    fprintf(stderr,"allocating grid failed!\n");
     exit(-1);
   }
 
-  fprintf(stderr,"computing geometric hash...");
   geometric_hash(grid, x, y, z, npoints);
-  fprintf(stderr,"done!\n");
 
   /* compute pair counts assuming periodic box */
   double *bin_edges_sq = my_malloc((nbins+1)*sizeof(double));
   double *bin_edges = my_malloc((nbins+1)*sizeof(double));
-  long int *pcounts = my_malloc(nbins*sizeof(long int));
-  long int *pcounts_jackknife = my_malloc(njack*nbins*sizeof(long int));
-  long int *pcounts_naive = my_malloc(nbins*sizeof(long int));
-  long int *pcounts_jackknife_naive = my_malloc(njack*nbins*sizeof(long int));
+  uint64_t *pcounts = my_malloc(nbins*sizeof(uint64_t));
+  uint64_t *pcounts_jackknife = my_malloc(njack*nbins*sizeof(uint64_t));
+  uint64_t *pcounts_naive = my_malloc(nbins*sizeof(uint64_t));
+  uint64_t *pcounts_jackknife_naive = my_malloc(njack*nbins*sizeof(uint64_t));
   int i;
   for(i=0;i<nbins;i++) {
-    pcounts[i] = (long int) 0;
-    pcounts_naive[i] = (long int) 0;
+    pcounts[i] = (int64_t) 0;
+    pcounts_naive[i] = (int64_t) 0;
   }
   for(int i=0;i<njack;i++) {
     for(int j=0;j<nbins;j++) {
-      pcounts_jackknife[i*nbins + j] = (long int) 0;
+      pcounts_jackknife[i*nbins + j] = (int64_t) 0;
     }
   }
   double dlogr = (log10(maxr)-log10(minr))/(double)nbins;
@@ -117,20 +142,21 @@ int main(int argc, char *argv[])
     bin_edges_sq[i] = SQ(bin_edge);
   }
 
-  fprintf(stderr,"computing pair counts...");
   count_pairs(grid, pcounts, pcounts_jackknife, bin_edges_sq, nbins);
-  fprintf(stderr,"done!\n");
 
-#ifdef TEST_ALL_PAIRS
-  count_pairs_naive(x,y,z, npoints, pcounts_naive, pcounts_jackknife, bin_edges_sq, nbins, njack, Lbox);
-#endif
+  if(do_test_pairs) { /* test pair counts */
+    fprintf(stderr,"computing N^2 pair counts...");
+    count_pairs_naive(x,y,z, label, npoints, pcounts_naive, pcounts_jackknife, bin_edges_sq, nbins, njack, Lbox);
+    fprintf(stderr,"done!\n");
+  }
 
   /* output pair counts */
-  printf("min_bin\tmax_bin\tbin_counts\tnatural_estimator\n");
+  printf("#min_bin\tmax_bin\tbin_counts\tnatural_estimator\n");
 
+  int bug = 0;
   for(i=0;i<nbins;i++) {
     double ndens = npoints/CUBE(Lbox);
-    double exp_counts = (2./3.)*M_PI*(CUBE(bin_edges[i+1])-CUBE(bin_edges[i]))*ndens*npoints;
+    double exp_counts = (4./3.)*M_PI*(CUBE(bin_edges[i+1])-CUBE(bin_edges[i]))*ndens*npoints;
 #ifdef JACKKNIFE_SUBSAMPLES
     double exp_counts_jackknife = exp_counts*(double)(((double)njack-1.0)/(double)njack);
 #else /* bootstrap subsamples */
@@ -141,9 +167,14 @@ int main(int argc, char *argv[])
       printf("\t%lf",(double)pcounts_jackknife[j*nbins + i]/exp_counts_jackknife - 1.0);
     }
     printf("\n");
-#ifdef TEST_ALL_PAIRS
-    printf("(naive) pair counts = %ld\n",pcounts_naive[i]);
-#endif
+
+    if(do_test_pairs) { /* test pair counts */
+      if(pcounts[i] != pcounts_naive[i]) {
+	fprintf(stderr,"\n*** BUG DETECTED in counts! ***\n");
+	bug++;
+      }
+      printf("(naive) pair counts = %ld\n",pcounts_naive[i]);
+    }
   }
 
   /* free memory */
@@ -157,5 +188,11 @@ int main(int argc, char *argv[])
   my_free(z);
   
   free_hash(grid);
+
+  /* if --test-pairs and we get wrong results, return error */
+  if(bug > 0) {
+    return 1;
+  }
+
   return 0;
 }

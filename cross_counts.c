@@ -1,12 +1,12 @@
 #include "hash.h"
 
-void cross_count_pairs_naive(FLOAT * x1, FLOAT * y1, FLOAT * z1, grid_id * label1, size_t npoints1, FLOAT * x2, FLOAT * y2, FLOAT * z2, grid_id * label2, size_t npoints2, long int * pcounts, long int * pcounts_jackknife, double *  bin_edges_sq, const int nbins, const int njack, const double Lbox)
+void cross_count_pairs_naive(FLOAT * x1, FLOAT * y1, FLOAT * z1, grid_id * label1, size_t npoints1, FLOAT * x2, FLOAT * y2, FLOAT * z2, grid_id * label2, size_t npoints2, uint64_t * pcounts, uint64_t * pcounts_jackknife, double *  bin_edges_sq, const int nbins, const int njack, const double Lbox)
 {
   count_pairs_disjoint(x1,y1,z1,label1,x2,y2,z2,label2,npoints1,npoints2, \
 		       pcounts,pcounts_jackknife,bin_edges_sq,nbins,njack,Lbox);
 }
 
-void cross_count_pairs(GHash * restrict g1, GHash * restrict g2, long int * restrict pcounts, long int * restrict pcounts_jackknife, double * restrict bin_edges_sq, int nbins, int njack)
+void cross_count_pairs(GHash * restrict g1, GHash * restrict g2, uint64_t * restrict pcounts, uint64_t * restrict pcounts_jackknife, double * restrict bin_edges_sq, int nbins, int njack)
 {
   /* check that g1 and g2 have the same ngrid and Lbox */
   if(g1->ngrid != g2->ngrid) {

@@ -107,21 +107,16 @@ int main(int argc, char *argv[])
   /* compute pair counts assuming periodic box */
   double *bin_edges_sq = my_malloc((nbins+1)*sizeof(double));
   double *bin_edges = my_malloc((nbins+1)*sizeof(double));
-  long int *pcounts = my_malloc(nbins*sizeof(long int));
-  long int *pcounts_jackknife = my_malloc(nsubsamples*nbins*sizeof(long int));
-  long int *pcounts_naive = my_malloc(nbins*sizeof(long int));
-  long int *pcounts_jackknife_naive = my_malloc(nsubsamples*nbins*sizeof(long int));
+  uint64_t *pcounts = my_malloc(nbins*sizeof(uint64_t));
+  uint64_t *pcounts_naive = my_malloc(nbins*sizeof(uint64_t));
+  uint64_t *pcounts_jackknife = my_malloc(nbins*sizeof(uint64_t));
+  uint64_t *pcounts_jackknife_naive = my_malloc(nbins*sizeof(uint64_t));
 
   for(int i=0;i<nbins;i++) {
-    pcounts[i] = (long int) 0;
-    pcounts_naive[i] = (long int) 0;
+    pcounts[i] = (uint64_t) 0;
+    pcounts_naive[i] = (uint64_t) 0;
   }
-  for(int i=0;i<nsubsamples;i++) {
-    for(int j=0;j<nbins;j++) {
-      pcounts_jackknife[i*nbins + j] = (long int) 0;
-      pcounts_jackknife_naive[i*nbins + j] = (long int) 0;
-    }
-  }
+
   double dlogr = (log10(maxr)-log10(minr))/(double)nbins;
   for(int i=0;i<=nbins;i++) {
     double bin_edge = pow(10.0, ((double)i)*dlogr + log10(minr));
@@ -138,21 +133,26 @@ int main(int argc, char *argv[])
 
   /* output pair counts */
   printf("min_bin\tmax_bin\tbin_counts\tnatural_estimator\n");
+  int count_bug = 0;
   for(int i=0;i<nbins;i++) {
+    /* test pair counts */
+    if (pcounts[i] != pcounts_naive[i]) {
+      printf("\n*** BUG DETECTED in counts! ***\n");
+      count_bug++;
+    }
+
     double ndens = npoints/CUBE(Lbox);
-    double exp_counts = (2./3.)*M_PI*(CUBE(bin_edges[i+1])-CUBE(bin_edges[i]))*ndens*npoints;
+    double exp_counts = (4./3.)*M_PI*(CUBE(bin_edges[i+1])-CUBE(bin_edges[i]))*ndens*npoints;
     double exp_counts_jackknife = exp_counts*(double)((1.0)/(double)nsubsamples);
     printf("%lf\t%lf\t%ld\t%lf",bin_edges[i],bin_edges[i+1],pcounts[i],(double)pcounts[i]/exp_counts - 1.0);
     for(int j=0;j<nsubsamples;j++) {
       printf("\t%lf",(double)pcounts_jackknife[j*nbins + i]/exp_counts_jackknife - 1.0);
-      //      printf("\t%lf",(double)pcounts_jackknife_naive[j*nbins + i]);
     }
     printf("\n");
 
     printf("%lf\t%lf\t%ld\t%lf",bin_edges[i],bin_edges[i+1],pcounts_naive[i],(double)pcounts_naive[i]/exp_counts - 1.0);
     for(int j=0;j<nsubsamples;j++) {
       printf("\t%lf",(double)pcounts_jackknife_naive[j*nbins + i]/exp_counts_jackknife - 1.0);
-      //      printf("\t%lf",(double)pcounts_jackknife_naive[j*nbins + i]);
     }
     printf("\n");
 
@@ -169,5 +169,11 @@ int main(int argc, char *argv[])
   my_free(z);
   
   free_hash(grid);
+ 
+  /* return 1 to signal test failure */
+  if(count_bug > 0) {
+    return 1;
+  }
+
   return 0;
 }

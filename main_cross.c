@@ -108,10 +108,11 @@ int main(int argc, char *argv[])
   /* compute pair counts */
   double *bin_edges_sq = my_malloc((nbins+1)*sizeof(double));
   double *bin_edges = my_malloc((nbins+1)*sizeof(double));
-  long int *pcounts = my_malloc(nbins*sizeof(long int));
-  long int *pcounts_jackknife = my_malloc(njack*nbins*sizeof(long int));
-  long int *pcounts_naive = my_malloc(nbins*sizeof(long int));
-  long int *pcounts_jackknife_naive = my_malloc(njack*nbins*sizeof(long int));
+
+  uint64_t *pcounts = my_malloc(nbins*sizeof(uint64_t));
+  uint64_t *pcounts_jackknife = my_malloc(njack*nbins*sizeof(uint64_t));
+  uint64_t *pcounts_naive = my_malloc(nbins*sizeof(uint64_t));
+  uint64_t *pcounts_jackknife_naive = my_malloc(njack*nbins*sizeof(uint64_t));
   int i;
   for(i=0;i<nbins;i++) {
     pcounts[i] = (long int) 0;
@@ -131,20 +132,17 @@ int main(int argc, char *argv[])
 #endif
 
   /* output pair counts */
-  /* printf("min_bin\tmax_bin\tbin_counts\tnatural_estimator\n"); */
+  printf("#min_bin\tmax_bin\tbin_counts\tnatural_estimator\n");
+
   for(i=0;i<nbins;i++) {
     double ndensA = npointsA/CUBE(Lbox);
     double exp_counts = (4./3.)*M_PI*(CUBE(bin_edges[i+1])-CUBE(bin_edges[i]))*ndensA*npointsB;
     /*double exp_counts_jackknife = exp_counts*(double)(((double)njack-1.0)/(double)njack); */ /* Jackknife */
     double exp_counts_jackknife = exp_counts*(double)(1.0/(double)njack); /* Bootstrap */
     printf("%lf\t%lf\t%ld\t%lf", bin_edges[i],bin_edges[i+1],pcounts[i],(double)pcounts[i]/exp_counts - 1);
-    /* printf("%lf\t%lf\t%ld\t%lf\n",bin_edges[i],bin_edges[i+1],pcounts[i],(double)pcounts[i]/exp_counts); */
     for(int j=0;j<njack;j++) {
       printf("\t%lf",(double)pcounts_jackknife[j*nbins + i]/exp_counts_jackknife - 1);
-      /*printf("\t%lf",(double)pcounts_jackknife[j*nbins + i]/exp_counts_jackknife - 1);*/
-      /*printf("\t%ld", pcounts_jackknife[j*nbins + i]);*/
     }
-    /*printf("\n");*/
     printf("\n");
 #ifdef TEST_ALL_PAIRS
     printf("(naive) pair counts between (%lf, %lf] = %ld\n",bin_edges[i],bin_edges[i+1],pcounts_naive[i]);
