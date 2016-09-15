@@ -24,8 +24,6 @@
 #define PERIODIC(dx) (((dx)>0.5*Lbox) ? ((dx)-Lbox) : ( ((dx)<-0.5*Lbox) ? ((dx)+Lbox) : (dx) ))
 //[GADGET macro] x=((x)>boxHalf_X)?((x)-boxSize_X):(((x)<-boxHalf_X)?((x)+boxSize_X):(x))
 
-typedef struct halo_metadata_ halo_metadata;
-
 typedef struct {
   int x;
   int y;
@@ -46,24 +44,9 @@ typedef struct {
   grid_id ** sample_excluded_from;
 } GHash;
 
-typedef struct MHash_ MHash;
-struct MHash_
-{
-  double * bin_edges;
-  size_t nbins;
-  size_t * counts;
-  size_t * allocated;
-  halo_metadata ** h;
-};
-
 void my_free(void* block);
 void* my_malloc(size_t size);
 void* my_realloc(void* old_block, size_t new_size, size_t old_size);
-
-int compare_halo_metadata_by_id(const void* a, const void* b);
-MHash* allocate_1d_hash(int nbins, double * bin_edges, size_t npoints, halo_metadata * h);
-void sort_1d_hash(MHash * m);
-void linearize_1d_hash(MHash * m, size_t len, halo_metadata * linear_halos);
 
 GHash* allocate_hash(int ngrid, int njack, double Lbox, size_t npoints, FLOAT * x, FLOAT * y, FLOAT * z);
 void free_hash(GHash * g);

@@ -2,8 +2,8 @@
 #CFLAGS=-g -Wall -std=c99 -O0
 CC=icc
 CFLAGS=-g -O3 -Wall -march=native -std=c99
-#HDF5_C_INCLUDE=/usr/include
-#HDF5_C_LIBS=/usr/lib64 -lhdf5
+#HDF5_C_INCLUDE=-I/usr/current/anaconda/include
+HDF5_C_LIBS=-lhdf5
 INCLUDE=-I $(HOME)/include $(HDF5_C_INCLUDE) $(MPI_CFLAGS)
 LIB=-L $(HOME)/lib $(HDF5_C_LIBS) -lgsl -lgslcblas 
 
@@ -11,7 +11,7 @@ OBJS_AUTO=hash.o auto_counts.o read_hdf5.o main.o
 OBJS_TEST_AUTO=hash.o auto_counts.o read_hdf5.o test_auto.o
 OBJS_CROSS=hash.o auto_counts.o cross_counts.o read_hdf5.o main_cross.o
 OBJS_TEST_CROSS=hash.o auto_counts.o cross_counts.o read_hdf5.o test_cross.o
-OBJS_DENSITY=hash.o density_counts.o read_hdf5.o write_hdf5.o main_density.o
+OBJS_DENSITY=hash.o hash1d.o density_counts.o read_hdf5.o write_hdf5.o main_density.o
 EXEC_AUTO = auto
 EXEC_CROSS = cross
 EXEC_DENSITY = density
@@ -55,6 +55,9 @@ density_counts.o: density_counts.c
 	$(CC) $(CFLAGS) $(INCLUDE) -c $< -o $@
 
 hash.o: hash.c
+	$(CC) $(CFLAGS) $(INCLUDE) -c $< -o $@
+
+hash1d.o: hash1d.c
 	$(CC) $(CFLAGS) $(INCLUDE) -c $< -o $@
 
 test_auto.o: test_auto.c

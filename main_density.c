@@ -1,4 +1,5 @@
 #include "hash.h"
+#include "hash1d.h"
 
 //#define PRINT_HALOS
 
@@ -44,7 +45,6 @@ int main(int argc, char *argv[])
   halo *pointsA = read_halos_hdf5(filenameA, "halos", &npointsA); // halos
   particle *pointsB = read_particles_hdf5(filenameB, "particles", &npointsB); // particles
 
-  /* generate random points (x,y,z) in unit cube */
   // separate arrays (or Fortran-style arrays) are necessary both for SIMD and cache efficiency
   FLOAT *x1 = (FLOAT*) my_malloc(npointsA*sizeof(FLOAT));
   FLOAT *y1 = (FLOAT*) my_malloc(npointsA*sizeof(FLOAT));
@@ -64,11 +64,9 @@ int main(int argc, char *argv[])
       z1[n] = pointsA[n].z;
       halo_id[n] = n; // use this to re-order output to be the same as the input
       halo_mass[n] = pointsA[n].mass;
-      //      printf("n: %lld id: %lld mass: %f\n",n,halo_id[n],halo_mass[n]);
     }
   for(n=0;n<npointsB;n++)
     {
-      //      printf("n: %ld x: %f y: %f z: %f\n",n,pointsB[n].x,pointsB[n].y,pointsB[n].z);
       x2[n] = pointsB[n].x;
       y2[n] = pointsB[n].y;
       z2[n] = pointsB[n].z;
@@ -116,23 +114,6 @@ int main(int argc, char *argv[])
   free_hash_with_id(grid1);
   free_hash(grid2);
 
-  /* output density for each halo */
-  double ndensB = (double)npointsB/CUBE(Lbox);
-  double exp_counts = (4./3.)*M_PI*(CUBE(rmax))*ndensB;
-
-#ifdef PRINT_HALOS
-  printf("#halo_id\tbin_counts\tdensity\n");
-
-  for(i=0;i<npointsA;i++) {
-    printf("%lld\t%ld\t%lf\t%lf",
-	   halo_id[i],
-	   halo_env_counts[i],
-	   (double)halo_env_counts[i] / exp_counts - 1.0,
-	   halo_mass[i]);
-    printf("\n");
-  }
-#endif
-
   /* compute mass bins */
   double binmin = 10.0; // log10 Msun
   double binmax = 15.0; // log10 Msun
@@ -149,10 +130,13 @@ int main(int argc, char *argv[])
       }
       double mass = pow(10.,log10mass);
       mass_bins[i] = mass;
-      printf("mass bin i: %d log10mass: %lf mass: %lf\n", i, log10mass, mass);
+      //      printf("mass bin i: %d log10mass: %lf mass: %lf\n", i, log10mass, mass);
     }
 
   /* create halo structs */
+  /* compute density for each halo */
+  double ndensB = (double)npointsB/CUBE(Lbox);
+  double exp_counts = (4./3.)*M_PI*(CUBE(rmax))*ndensB;
   halo_metadata * halos = my_malloc(npointsA*sizeof(halo_metadata));
   for(i=0;i<npointsA;i++) {
     halos[i].id = halo_id[i];
@@ -174,6 +158,7 @@ int main(int argc, char *argv[])
   qsort(halos, npointsA, sizeof(halo_metadata), compare_halo_metadata_by_id);
 
   /* print halos */
+#ifdef PRINT_HALOS
   for(i=0;i<npointsA;i++) {
     printf("id: %lld mass: %f density: %f percentile %f\n",
 	   halos[i].id,
@@ -181,6 +166,7 @@ int main(int argc, char *argv[])
 	   halos[i].density,
 	   halos[i].percentile);
   }
+#endif
 
   /* save into (new) HDF5 file */
   write_halo_hdf5(output_filename, "halos", npointsA, halos);
