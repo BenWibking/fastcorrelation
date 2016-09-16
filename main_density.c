@@ -6,14 +6,14 @@
 int main(int argc, char *argv[])
 {
   /* input: number of points to test, number of cells per axis */
-  double Lbox, rmax;
-  float input_boxsize, input_rmax;
+  double Lbox, rmax, logdM;
+  float input_boxsize, input_rmax, input_logdm;
   char *filenameA, *filenameB, *output_filename;
   int njack = 1;
 
   /* check inputs */
-  if(argc != 6) {
-    printf("./density rmax box_size halos_filenameA particles_filenameB output_filename\n");
+  if(argc != 7) {
+    printf("./density rmax box_size logdM halos_filenameA particles_filenameB output_filename\n");
     exit(-1);
   }
 
@@ -21,23 +21,29 @@ int main(int argc, char *argv[])
 
   input_rmax = atof(argv[1]);
   input_boxsize = atof(argv[2]);
+  input_logdm = atof(argv[3]);
 
-  filenameA = malloc(sizeof(char)*(strlen(argv[3])+1));
-  sprintf(filenameA,"%s",argv[3]);
-  filenameB = malloc(sizeof(char)*(strlen(argv[4])+1));
-  sprintf(filenameB,"%s",argv[4]);
-  output_filename = malloc(sizeof(char)*(strlen(argv[5])+1));
-  sprintf(output_filename,"%s",argv[5]);
+  filenameA = malloc(sizeof(char)*(strlen(argv[4])+1));
+  sprintf(filenameA,"%s",argv[4]);
+  filenameB = malloc(sizeof(char)*(strlen(argv[5])+1));
+  sprintf(filenameB,"%s",argv[5]);
+  output_filename = malloc(sizeof(char)*(strlen(argv[6])+1));
+  sprintf(output_filename,"%s",argv[6]);
 
   if(input_boxsize <= 0.) {
     printf("boxsize must be positive!\n");
-    exit(-1);
+    exit(1);
+  }
+  if(input_logdm <= 0.) {
+    printf("logdM must be positive!\n");
+    exit(1);
   }
 
   size_t npointsA,npointsB;
   int ngrid;
   rmax = input_rmax;
   Lbox = (double)input_boxsize;
+  logdM = input_logdm;
   /* compute ngrid from rmax */
   ngrid = (int)floor(Lbox/rmax);
 
@@ -117,7 +123,7 @@ int main(int argc, char *argv[])
   /* compute mass bins */
   double binmin = 10.0; // log10 Msun
   double binmax = 15.0; // log10 Msun
-  double deltabin = 0.1; // log10 Msun
+  double deltabin = logdM;
   int nbins = ((int) floor((binmax - binmin)/deltabin)) + 1;
   double *mass_bins;
   mass_bins = (double*) my_malloc(nbins*sizeof(double));
